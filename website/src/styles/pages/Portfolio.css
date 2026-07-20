@@ -1,0 +1,320 @@
+/* Portfolio Page Styling */
+
+.portfolio-hero {
+  padding: var(--spacing-xl) 0;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  text-align: center;
+}
+
+.portfolio-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-white);
+}
+
+.portfolio-hero h1 span {
+  color: var(--primary-gold);
+}
+
+.portfolio-hero p {
+  color: var(--color-light-gray);
+  max-width: 650px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+}
+
+/* Gallery Grid Section */
+.gallery-section {
+  padding: var(--spacing-xl) 0 var(--spacing-xxl) 0;
+}
+
+/* Portfolio Card Layout override for full page */
+.portfolio-grid-card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  transition: var(--transition-normal);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.portfolio-grid-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--primary-gold);
+  box-shadow: var(--shadow-md);
+}
+
+.portfolio-grid-card-image {
+  height: 250px;
+  overflow: hidden;
+  position: relative;
+}
+
+.portfolio-grid-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-slow);
+}
+
+.portfolio-grid-card:hover .portfolio-grid-card-image img {
+  transform: scale(1.05);
+}
+
+.portfolio-grid-card-tag {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.portfolio-grid-card-content {
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-grow: 1;
+}
+
+.portfolio-grid-card-client {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--primary-gold);
+  font-weight: 600;
+}
+
+.portfolio-grid-card-title {
+  font-size: 1.25rem;
+  color: var(--color-black);
+}
+
+.portfolio-grid-card-desc {
+  font-size: 0.9rem;
+  color: var(--color-light-gray);
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.portfolio-grid-card-results {
+  display: flex;
+  gap: 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.result-badge {
+  display: flex;
+  flex-direction: column;
+}
+
+.result-badge-val {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.result-badge-lbl {
+  font-size: 0.7rem;
+  color: var(--color-light-gray);
+}
+
+/* Detail Modal Overlay Panel */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(17, 17, 17, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  opacity: 0;
+  visibility: hidden;
+  transition: var(--transition-normal);
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-container {
+  background-color: var(--color-white);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  border-radius: var(--border-radius-lg);
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  transform: scale(0.95);
+  transition: var(--transition-normal);
+}
+
+.modal-overlay.open .modal-container {
+  transform: scale(1);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-radius: var(--border-radius-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+  background-color: var(--primary-gold);
+  color: var(--color-black);
+}
+
+.modal-hero-image {
+  height: 350px;
+  width: 100%;
+  position: relative;
+}
+
+.modal-hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-md) var(--spacing-md);
+  color: var(--color-white);
+}
+
+.modal-hero-client {
+  font-size: 0.8rem;
+  color: var(--primary-gold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.modal-hero-title {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  color: var(--color-white);
+  line-height: 1.2;
+}
+
+.modal-body {
+  padding: var(--spacing-lg);
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr;
+  gap: var(--spacing-lg);
+}
+
+.modal-content-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.modal-text-group h3 {
+  font-size: 1.25rem;
+  color: var(--color-black);
+  margin-bottom: 6px;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 4px;
+}
+
+.modal-text-group p {
+  color: var(--color-mid-gray);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.modal-sidebar {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.modal-sidebar-title {
+  font-size: 1.1rem;
+  color: var(--color-black);
+}
+
+.modal-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+
+.modal-result-item:last-child {
+  border-bottom: none;
+}
+
+.modal-result-val {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary-gold);
+}
+
+.modal-result-lbl {
+  font-size: 0.85rem;
+  color: var(--color-mid-gray);
+}
+
+/* Responsive CSS for Portfolio */
+@media (max-width: 768px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .modal-hero-image {
+    height: 250px;
+  }
+}

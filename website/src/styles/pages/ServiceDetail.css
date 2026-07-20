@@ -1,0 +1,387 @@
+/* ServiceDetail Page Styling */
+
+.service-detail-wrapper {
+  background-color: var(--color-bg);
+}
+
+/* Service Detail Hero section with high-impact dark mode banner */
+.service-detail-hero {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: 80px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-detail-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.service-detail-hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.service-detail-hero .service-category-tag {
+  background-color: rgba(212, 175, 55, 0.15);
+  color: var(--primary-gold);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: inline-block;
+  margin-bottom: var(--spacing-sm);
+}
+
+.service-detail-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.service-detail-hero h1 span {
+  color: var(--primary-gold);
+}
+
+.service-detail-hero p {
+  color: var(--color-light-gray);
+  max-width: 700px;
+  margin: 0 auto;
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Back Link navigation bar */
+.service-nav-bar {
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-sm) 0;
+}
+
+.service-nav-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-to-services-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-mid-gray);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--transition-fast);
+  text-decoration: none;
+}
+
+.back-to-services-link:hover {
+  color: var(--color-black);
+  transform: translateX(-3px);
+}
+
+/* Service Detail Primary Grid layout */
+.service-main-section {
+  padding: var(--spacing-xl) 0 var(--spacing-xxl) 0;
+}
+
+.service-info-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.service-detailed-description {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.service-detailed-description h2 {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: var(--color-black);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.service-detailed-description p {
+  color: var(--color-mid-gray);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.service-detailed-description p.details-expanded {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-subtle);
+  border-left: 4px solid var(--primary-gold);
+}
+
+/* Benefits Box */
+.service-benefits-sidebar {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-premium);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.service-benefits-sidebar h3 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--color-black);
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-bg);
+  padding-bottom: 12px;
+}
+
+.service-benefit-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.benefit-card-item {
+  display: flex;
+  gap: 12px;
+}
+
+.benefit-card-icon {
+  background-color: var(--primary-gold-light);
+  color: var(--primary-gold);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.benefit-card-text h4 {
+  font-size: 1rem;
+  color: var(--color-black);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.benefit-card-text p {
+  font-size: 0.9rem;
+  color: var(--color-mid-gray);
+  line-height: 1.4;
+}
+
+/* Related Case Studies Section */
+.service-related-cases {
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-xl) 0;
+}
+
+.case-studies-subgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+/* Direct Request Form Container */
+.service-lead-form-section {
+  padding: var(--spacing-xl) 0 var(--spacing-xxl) 0;
+  background-color: var(--color-bg);
+}
+
+.service-form-card {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-premium);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.service-form-card .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.service-form-card .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: var(--spacing-md);
+  text-align: left;
+}
+
+.service-form-card .form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-black);
+  letter-spacing: 0.5px;
+}
+
+.service-form-card .form-group input,
+.service-form-card .form-group textarea {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  padding: 12px 16px;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--color-black);
+  transition: var(--transition-fast);
+  width: 100%;
+}
+
+.service-form-card .form-group input:focus,
+.service-form-card .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-gold);
+  box-shadow: 0 0 0 3px rgba(212, 166, 42, 0.15);
+}
+
+.service-form-card .form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+@media (max-width: 600px) {
+  .service-form-card .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.service-form-header {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.service-form-header h2 {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: var(--color-black);
+  font-weight: 700;
+}
+
+.service-form-header p {
+  color: var(--color-mid-gray);
+  font-size: 1rem;
+  margin-top: 8px;
+}
+
+/* Service Navigation Bottom suggestions */
+.other-services-suggestions {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: var(--spacing-xl) 0 var(--spacing-xxl) 0;
+}
+
+.other-services-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--spacing-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 20px;
+}
+
+.other-services-header h3 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-white);
+}
+
+.other-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.suggestion-card {
+  background-color: #111;
+  border: 1px solid #222;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  transition: var(--transition-normal);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestion-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary-gold);
+  background-color: #1a1a1a;
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.suggestion-icon {
+  color: var(--primary-gold);
+  background-color: rgba(212, 175, 55, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggestion-title {
+  color: var(--color-white);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-family: var(--font-display);
+}
+
+.suggestion-desc {
+  color: var(--color-light-gray);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.suggestion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-gold);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 992px) {
+  .service-info-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+}

@@ -1,0 +1,21 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  margin-left: 250px;
+  min-height: 100vh;
+  background: var(--workspace-bg);
+}
+
+.app-content {
+  padding: 24px;
+}
+
+@media (max-width: 900px) {
+  .app-main {
+    margin-left: 0;
+  }
+}

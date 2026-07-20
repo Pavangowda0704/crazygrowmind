@@ -1,0 +1,43 @@
+/* 404 Page Styling */
+
+.notfound-wrapper {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-bg);
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.notfound-card {
+  max-width: 550px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xl) var(--spacing-md);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.notfound-code {
+  font-family: var(--font-display);
+  font-size: 6rem;
+  font-weight: 700;
+  color: var(--primary-gold);
+  line-height: 1;
+}
+
+.notfound-title {
+  font-size: 1.8rem;
+  color: var(--color-black);
+}
+
+.notfound-desc {
+  color: var(--color-light-gray);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}

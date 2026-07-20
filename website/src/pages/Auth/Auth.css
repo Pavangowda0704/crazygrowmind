@@ -1,0 +1,336 @@
+/* CrazyGrowMind Studio — Admin Auth
+   Design tokens derived from the brand mark: near-black + gold gradient,
+   with a circuit/arrow motif echoing the logo's brain-and-growth-arrow icon. */
+
+.auth-screen {
+  --ink: #0e0e10;
+  --ink-soft: #6b6b70;
+  --paper: #faf9f5;
+  --line: #e6e3da;
+  --gold-1: #f7c65b;
+  --gold-2: #c7861d;
+  --error: #d64545;
+
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--paper);
+}
+
+@media (max-width: 860px) {
+  .auth-screen {
+    grid-template-columns: 1fr;
+  }
+  .auth-brandpanel {
+    display: none;
+  }
+}
+
+/* ---------- Left: brand panel ---------- */
+
+.auth-brandpanel {
+  position: relative;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px 64px;
+  overflow: hidden;
+}
+
+.auth-brandpanel::before {
+  /* faint radial glow behind the logo, subtle, not decorative noise */
+  content: "";
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(247, 198, 91, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
+.auth-brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.auth-brand-mark img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.auth-brand-name {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.auth-brand-name span {
+  background: linear-gradient(120deg, var(--gold-1), var(--gold-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.auth-brand-copy {
+  max-width: 380px;
+  z-index: 1;
+}
+
+.auth-brand-copy h1 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+.auth-brand-copy p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+}
+
+/* signature element: circuit line tracing up to an arrowhead,
+   echoing the gold arrow + circuit nodes in the logo */
+.auth-circuit {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  z-index: 1;
+}
+
+.auth-circuit path {
+  fill: none;
+  stroke: url(#authGoldGrad);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  animation: auth-trace 1.6s ease forwards 0.3s;
+}
+
+.auth-circuit circle {
+  fill: var(--ink);
+  stroke: url(#authGoldGrad);
+  stroke-width: 2;
+  opacity: 0;
+  animation: auth-node-in 0.4s ease forwards;
+}
+
+.auth-circuit circle:nth-of-type(1) { animation-delay: 0.9s; }
+.auth-circuit circle:nth-of-type(2) { animation-delay: 1.1s; }
+.auth-circuit circle:nth-of-type(3) { animation-delay: 1.3s; }
+
+@keyframes auth-trace {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes auth-node-in {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-circuit path,
+  .auth-circuit circle {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.auth-brand-foot {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  z-index: 1;
+}
+
+/* ---------- Right: form panel ---------- */
+
+.auth-formpanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.auth-card-head {
+  margin-bottom: 32px;
+}
+
+.auth-card-head h2 {
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.auth-card-head p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.auth-field {
+  margin-bottom: 18px;
+}
+
+.auth-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.auth-input-wrap {
+  position: relative;
+}
+
+.auth-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-field input:focus {
+  border-color: var(--gold-2);
+  box-shadow: 0 0 0 3px rgba(199, 134, 29, 0.14);
+}
+
+.auth-field input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+.auth-field-error {
+  font-size: 12.5px;
+  color: var(--error);
+  margin-top: 6px;
+}
+
+.auth-toggle-visibility {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.auth-toggle-visibility:hover {
+  color: var(--ink);
+}
+
+.auth-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 22px;
+}
+
+.auth-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+}
+
+.auth-link {
+  color: var(--gold-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* signature button: gold gradient, arrow glides right on hover */
+.auth-submit {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--ink);
+  background: linear-gradient(120deg, var(--gold-1), var(--gold-2));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.auth-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.auth-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-submit .auth-arrow {
+  transition: transform 0.2s ease;
+}
+
+.auth-submit:hover:not(:disabled) .auth-arrow {
+  transform: translateX(3px);
+}
+
+.auth-submit:focus-visible,
+.auth-link:focus-visible,
+.auth-toggle-visibility:focus-visible,
+.auth-field input:focus-visible {
+  outline: 2px solid var(--gold-2);
+  outline-offset: 2px;
+}
+
+.auth-banner-error {
+  background: rgba(214, 69, 69, 0.08);
+  border: 1px solid rgba(214, 69, 69, 0.3);
+  color: var(--error);
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin-top: 24px;
+}

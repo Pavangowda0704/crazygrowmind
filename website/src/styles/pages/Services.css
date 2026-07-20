@@ -1,0 +1,276 @@
+/* Services Page Styling */
+
+.services-hero {
+  padding: var(--spacing-xl) 0;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  text-align: center;
+}
+
+.services-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-white);
+}
+
+.services-hero h1 span {
+  color: var(--primary-gold);
+}
+
+.services-hero p {
+  color: var(--color-light-gray);
+  max-width: 650px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+}
+
+/* Category Filter Tabs */
+.filter-tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-xl) 0 var(--spacing-lg) 0;
+}
+
+.filter-tab {
+  font-family: var(--font-display);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  color: var(--color-mid-gray);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: var(--transition-fast);
+}
+
+.filter-tab:hover,
+.filter-tab.active {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+  transform: translateY(-1px);
+}
+
+.filter-tab.active-gold {
+  background-color: var(--primary-gold);
+  color: var(--color-black);
+  border-color: var(--primary-gold);
+}
+
+/* 1. Selected Service Detail Showcase Panel */
+.service-showcase {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-premium);
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--spacing-lg);
+  align-items: center;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.service-showcase-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.service-showcase-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--color-black);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.service-showcase-title svg {
+  color: var(--primary-gold);
+}
+
+.service-showcase-tag {
+  align-self: flex-start;
+  background-color: var(--primary-gold-light);
+  color: var(--primary-gold);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.service-showcase-desc {
+  color: var(--color-mid-gray);
+  font-size: 1.05rem;
+}
+
+.service-showcase-details {
+  font-size: 0.95rem;
+  color: var(--color-light-gray);
+}
+
+.service-showcase-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: var(--color-bg);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border-left: 4px solid var(--primary-gold);
+}
+
+.service-showcase-benefits h4 {
+  font-size: 1.1rem;
+  color: var(--color-black);
+  margin-bottom: 4px;
+}
+
+.service-benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--color-mid-gray);
+}
+
+.service-benefit-item svg {
+  color: var(--primary-gold);
+  flex-shrink: 0;
+}
+
+/* 2. Service Cards Grid */
+.services-section {
+  padding: var(--spacing-xl) 0 var(--spacing-xxl) 0;
+}
+
+.service-grid-card {
+  background-color: var(--color-white);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  transition: var(--transition-normal);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+.service-grid-card:hover {
+  border-color: var(--primary-gold);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.service-grid-card.selected {
+  border-color: var(--primary-gold);
+  background-color: var(--primary-gold-light);
+  box-shadow: var(--shadow-premium);
+}
+
+.service-grid-icon {
+  width: 45px;
+  height: 45px;
+  background-color: var(--color-black);
+  color: var(--primary-gold);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-grid-card:hover .service-grid-icon {
+  background-color: var(--primary-gold);
+  color: var(--color-black);
+}
+
+.service-grid-title {
+  font-size: 1.15rem;
+  color: var(--color-black);
+}
+
+.service-grid-desc {
+  font-size: 0.85rem;
+  color: var(--color-light-gray);
+  line-height: 1.5;
+}
+
+/* 3. FAQ Section styling */
+.faq-section {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-bg);
+}
+
+.faq-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.faq-item {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  transition: var(--transition-normal);
+}
+
+.faq-item:hover {
+  border-color: var(--primary-gold);
+}
+
+.faq-question {
+  width: 100%;
+  padding: 20px var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--color-black);
+  background: none;
+  border: none;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: var(--transition-normal);
+  color: var(--color-mid-gray);
+  font-size: 0.95rem;
+  border-top: 1px solid transparent;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 200px;
+  padding: 16px var(--spacing-md) 24px var(--spacing-md);
+  border-top-color: var(--color-border);
+}
+
+.faq-icon-wrapper {
+  color: var(--primary-gold);
+  transition: var(--transition-fast);
+}
+
+.faq-item.active .faq-icon-wrapper {
+  transform: rotate(180deg);
+}
+
+/* Responsive CSS for Services */
+@media (max-width: 900px) {
+  .service-showcase {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+}

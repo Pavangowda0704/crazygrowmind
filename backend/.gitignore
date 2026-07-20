@@ -1,0 +1,15 @@
+node_modules/
+.env
+
+# Local file uploads (populated automatically when Cloudinary isn't
+# configured — see middleware/upload.js). Keep the folder structure in
+# git via .gitkeep, but not the actual uploaded images.
+uploads/**
+!uploads/**/
+!uploads/**/.gitkeep
+
+# Drop-in branding source images are personal/local — don't commit them
+branding-source/*.png
+branding-source/*.jpg
+branding-source/*.jpeg
+branding-source/*.webp

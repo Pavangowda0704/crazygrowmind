@@ -1,0 +1,241 @@
+/* About Us Page Styling */
+
+.about-hero {
+  padding: var(--spacing-xl) 0;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  text-align: center;
+}
+
+.about-hero h1 {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-white);
+}
+
+.about-hero h1 span {
+  color: var(--primary-gold);
+}
+
+.about-hero p {
+  color: var(--color-light-gray);
+  max-width: 650px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+}
+
+/* 1. Company Story Section */
+.story-section {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-white);
+}
+
+.story-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: var(--spacing-xl);
+  align-items: center;
+}
+
+.story-image img {
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  width: 100%;
+  height: 450px;
+  object-fit: cover;
+}
+
+.story-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.story-content p {
+  color: var(--color-mid-gray);
+  font-size: 1rem;
+}
+
+/* 2. Mission & Vision Bento Style */
+.mv-section {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-bg);
+}
+
+.mv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.mv-card {
+  background-color: var(--color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  transition: var(--transition-normal);
+}
+
+.mv-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary-gold);
+  box-shadow: var(--shadow-md);
+}
+
+.mv-icon {
+  width: 50px;
+  height: 50px;
+  background-color: var(--primary-gold-light);
+  color: var(--primary-gold);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mv-card h3 {
+  font-size: 1.5rem;
+  color: var(--color-black);
+}
+
+.mv-card p {
+  color: var(--color-mid-gray);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* 3. Core Values Grid */
+.values-section {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-white);
+}
+
+.value-card {
+  border-left: 3px solid var(--primary-gold);
+  padding-left: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.value-card h3 {
+  font-size: 1.25rem;
+  color: var(--color-black);
+}
+
+.value-card p {
+  color: var(--color-light-gray);
+  font-size: 0.9rem;
+}
+
+/* 4. Our Team Section */
+.team-section {
+  padding: var(--spacing-xxl) 0;
+  background-color: var(--color-bg);
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.team-card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  transition: var(--transition-normal);
+}
+
+.team-card:hover {
+  border-color: var(--primary-gold);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+}
+
+.team-image-wrapper {
+  height: 350px;
+  overflow: hidden;
+}
+
+.team-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-slow);
+}
+
+.team-card:hover .team-image-wrapper img {
+  transform: scale(1.05);
+}
+
+.team-content {
+  padding: var(--spacing-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-name {
+  font-size: 1.25rem;
+  color: var(--color-black);
+  font-weight: 700;
+}
+
+.team-role {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.team-bio {
+  color: var(--color-mid-gray);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.team-socials {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  margin-top: 4px;
+}
+
+.team-social-link {
+  color: var(--color-light-gray);
+  transition: var(--transition-fast);
+}
+
+.team-social-link:hover {
+  color: var(--primary-gold);
+}
+
+/* Responsive CSS for About */
+@media (max-width: 1024px) {
+  .story-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .mv-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+}
