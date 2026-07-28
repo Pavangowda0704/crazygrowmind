@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logo.png';
 import '../styles/Auth.css';
 
 const Login = () => {
@@ -29,6 +30,7 @@ const Login = () => {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-brand">
+          <img src={logo} alt="CrazyGrowMind Studio" className="auth-logo" />
           <span className="brand-gold">Crazy</span>GrowMind Studio
           <div className="auth-sub">Admin Portal Login</div>
         </div>

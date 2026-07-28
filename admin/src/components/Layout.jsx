@@ -9,7 +9,14 @@ const Layout = () => {
 
   return (
     <div className="app-shell">
-      <Sidebar open={sidebarOpen} />
+      <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <div className="app-main">
         <Header onToggleSidebar={() => setSidebarOpen((v) => !v)} />
         <main className="app-content">

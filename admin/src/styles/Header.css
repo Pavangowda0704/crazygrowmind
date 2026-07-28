@@ -4,7 +4,7 @@
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  padding: 0 24px;
+  padding: 0 var(--space-5);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -15,6 +15,18 @@
   background: none;
   border: none;
   font-size: 20px;
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.hamburger:hover {
+  background: var(--workspace-bg);
 }
 
 .topbar-spacer {
@@ -32,7 +44,8 @@
   background: none;
   border: none;
   padding: 6px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
 }
 
 .user-btn:hover {
@@ -43,11 +56,12 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
   color: #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-display);
   font-weight: 700;
 }
 
@@ -62,7 +76,7 @@
   text-transform: capitalize;
   background: var(--workspace-bg);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-full);
 }
 
 .user-dropdown {
@@ -71,8 +85,8 @@
   top: 50px;
   background: #fff;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
   min-width: 140px;
   overflow: hidden;
 }
@@ -84,6 +98,7 @@
   background: none;
   border: none;
   font-size: 14px;
+  transition: background var(--transition);
 }
 
 .user-dropdown button:hover {
@@ -92,6 +107,25 @@
 
 @media (max-width: 900px) {
   .hamburger {
-    display: block;
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 var(--space-3);
+  }
+  .user-name {
+    display: none;
+  }
+  .user-role {
+    display: none;
+  }
+  .user-btn {
+    padding: 4px;
+    gap: 0;
+  }
+  .user-dropdown {
+    min-width: 120px;
   }
 }

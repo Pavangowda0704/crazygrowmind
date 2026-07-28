@@ -23,6 +23,14 @@
   color: var(--text-primary);
 }
 
+.auth-logo {
+  display: block;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin: 0 auto 12px;
+}
+
 .auth-sub {
   font-size: 13px;
   font-weight: 400;
@@ -78,4 +86,15 @@
 
 .auth-link:hover {
   color: var(--gold-dark);
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: var(--space-4);
+    align-items: flex-start;
+    padding-top: 15vh;
+  }
+  .auth-card {
+    padding: 28px 22px;
+  }
 }

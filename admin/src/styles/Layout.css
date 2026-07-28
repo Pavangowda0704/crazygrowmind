@@ -5,17 +5,28 @@
 
 .app-main {
   flex: 1;
+  min-width: 0;
   margin-left: 250px;
   min-height: 100vh;
   background: var(--workspace-bg);
 }
 
 .app-content {
-  padding: 24px;
+  padding: var(--space-6) var(--space-5);
+  max-width: 1400px;
 }
 
 @media (max-width: 900px) {
   .app-main {
     margin-left: 0;
+  }
+  .app-content {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .app-content {
+    padding: var(--space-3);
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import logo from '../assets/logo.png';
 import '../styles/Auth.css';
 
 const ResetPassword = () => {
@@ -33,6 +34,7 @@ const ResetPassword = () => {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-brand">
+          <img src={logo} alt="CrazyGrowMind Studio" className="auth-logo" />
           <span className="brand-gold">Crazy</span>GrowMind Studio
           <div className="auth-sub">Set a new password</div>
         </div>

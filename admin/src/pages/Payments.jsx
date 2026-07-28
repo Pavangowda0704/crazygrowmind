@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { Wallet, CalendarDays, TrendingUp, TrendingDown, Hourglass, AlertTriangle, Receipt, BarChart3 } from 'lucide-react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import SearchFilterBar from '../components/SearchFilterBar';
@@ -80,17 +81,17 @@ const Payments = () => {
         loading || !analytics ? <Loader /> : (
           <>
             <div className="stats-grid">
-              <StatCard label="Total Collected" value={`₹${analytics.totalCollected.toLocaleString('en-IN')}`} icon="💰" />
-              <StatCard label="This Month" value={`₹${analytics.thisMonthCollected.toLocaleString('en-IN')}`} icon="📅" />
+              <StatCard label="Total Collected" value={`₹${analytics.totalCollected.toLocaleString('en-IN')}`} icon={<Wallet size={20} />} />
+              <StatCard label="This Month" value={`₹${analytics.thisMonthCollected.toLocaleString('en-IN')}`} icon={<CalendarDays size={20} />} />
               <StatCard
                 label="vs Last Month"
                 value={analytics.momChangePercent === null ? '—' : `${analytics.momChangePercent > 0 ? '+' : ''}${analytics.momChangePercent}%`}
-                icon={analytics.momChangePercent >= 0 ? '📈' : '📉'}
+                icon={analytics.momChangePercent >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
               />
-              <StatCard label="Pending Amount" value={`₹${analytics.totalPending.toLocaleString('en-IN')}`} icon="⏳" />
-              <StatCard label="Overdue Invoices" value={analytics.overdueCount} icon="⚠️" />
-              <StatCard label="Total Transactions" value={analytics.transactionCount} icon="🧾" />
-              <StatCard label="Avg. Payment" value={`₹${analytics.avgPaymentAmount.toLocaleString('en-IN')}`} icon="📊" />
+              <StatCard label="Pending Amount" value={`₹${analytics.totalPending.toLocaleString('en-IN')}`} icon={<Hourglass size={20} />} />
+              <StatCard label="Overdue Invoices" value={analytics.overdueCount} icon={<AlertTriangle size={20} />} />
+              <StatCard label="Total Transactions" value={analytics.transactionCount} icon={<Receipt size={20} />} />
+              <StatCard label="Avg. Payment" value={`₹${analytics.avgPaymentAmount.toLocaleString('en-IN')}`} icon={<BarChart3 size={20} />} />
             </div>
 
             <div className="charts-grid">

@@ -59,3 +59,12 @@
   border-top: 1px solid var(--border-color);
   padding-top: 8px;
 }
+
+@media (max-width: 640px) {
+  .invoice-form {
+    padding: 16px;
+  }
+  .invoice-totals {
+    max-width: none;
+  }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
@@ -92,6 +93,9 @@ const InvoiceView = () => {
 
   return (
     <div>
+      <button className="back-link" onClick={() => navigate('/invoices')}>
+        <ArrowLeft size={15} /> Back to Invoices
+      </button>
       <PageHeader
         title={`Invoice ${invoice.invoiceNumber}`}
         subtitle={<StatusBadge status={invoice.status} />}

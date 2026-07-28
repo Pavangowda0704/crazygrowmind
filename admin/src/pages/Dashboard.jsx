@@ -3,6 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+import { Target, Users, Wrench, FileText, Wallet, Hourglass, CreditCard } from 'lucide-react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import StatCard from '../components/StatCard';
@@ -38,13 +39,13 @@ const Dashboard = () => {
       <PageHeader title="Dashboard" subtitle="Overview of your business performance" />
 
       <div className="stats-grid">
-        <StatCard label="Total Leads" value={totals.leads} icon="🎯" />
-        <StatCard label="Total Customers" value={totals.customers} icon="👥" />
-        <StatCard label="Total Services" value={totals.services} icon="🛠️" />
-        <StatCard label="Total Invoices" value={totals.invoices} icon="🧾" />
-        <StatCard label="Revenue Collected" value={`₹${totals.revenue.toLocaleString('en-IN')}`} icon="💰" />
-        <StatCard label="Pending Amount" value={`₹${totals.pendingAmount.toLocaleString('en-IN')}`} icon="⏳" />
-        <StatCard label="Total Payments" value={totals.payments} icon="💳" />
+        <StatCard label="Total Leads" value={totals.leads} icon={<Target size={20} />} />
+        <StatCard label="Total Customers" value={totals.customers} icon={<Users size={20} />} />
+        <StatCard label="Total Services" value={totals.services} icon={<Wrench size={20} />} />
+        <StatCard label="Total Invoices" value={totals.invoices} icon={<FileText size={20} />} />
+        <StatCard label="Revenue Collected" value={`₹${totals.revenue.toLocaleString('en-IN')}`} icon={<Wallet size={20} />} />
+        <StatCard label="Pending Amount" value={`₹${totals.pendingAmount.toLocaleString('en-IN')}`} icon={<Hourglass size={20} />} />
+        <StatCard label="Total Payments" value={totals.payments} icon={<CreditCard size={20} />} />
       </div>
 
       <div className="charts-grid">

@@ -2,19 +2,38 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .page-header h1 {
-  font-size: 22px;
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 800;
   margin: 0;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .page-header p {
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13.5px;
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    align-items: flex-start;
+  }
+  .page-header h1 {
+    font-size: 19px;
+  }
+  .page-header-action {
+    width: 100%;
+  }
+  .page-header-action .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
