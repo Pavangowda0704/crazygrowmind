@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
-import { Wallet, CalendarDays, TrendingUp, TrendingDown, Hourglass, AlertTriangle, Receipt, BarChart3 } from 'lucide-react';
+import { Wallet, CalendarDays, TrendingUp, TrendingDown, Hourglass, AlertTriangle, Receipt, BarChart3, FileText, Ticket, Users } from 'lucide-react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import SearchFilterBar from '../components/SearchFilterBar';
@@ -15,6 +15,9 @@ import '../styles/Payments.css';
 import '../styles/Dashboard.css';
 
 const COLORS = ['#c9a227', '#2563eb', '#16a34a', '#dc2626', '#d97706', '#6b7280'];
+const MODULE_COLORS = { Invoice: '#2563eb', Booking: '#c9a227', EmployeePayment: '#dc2626' };
+const MODULE_LABELS = { Invoice: 'Invoices', Booking: 'Bookings', EmployeePayment: 'Employee Payments' };
+const MODULE_ICONS = { Invoice: FileText, Booking: Ticket, EmployeePayment: Users };
 
 const Payments = () => {
   const [tab, setTab] = useState('history'); // history | pending | analytics
@@ -137,6 +140,89 @@ const Payments = () => {
                   </ResponsiveContainer>
                 )}
               </div>
+            </div>
+
+            <h3 style={{ margin: '28px 0 12px' }}>By Activity Type</h3>
+            <div className="charts-grid" style={{ marginBottom: 8 }}>
+              <div className="chart-card">
+                <h3>Money In vs Out — Last 6 Months</h3>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={analytics.monthlyTrendByModule}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey="month" fontSize={12} />
+                    <YAxis fontSize={12} />
+                    <Tooltip formatter={(v) => `₹${Number(v).toLocaleString('en-IN')}`} />
+                    <Legend />
+                    <Bar dataKey="Invoice" fill={MODULE_COLORS.Invoice} radius={[4, 4, 0, 0]} name="Invoices" />
+                    <Bar dataKey="Booking" fill={MODULE_COLORS.Booking} radius={[4, 4, 0, 0]} name="Bookings" />
+                    <Bar dataKey="EmployeePayment" fill={MODULE_COLORS.EmployeePayment} radius={[4, 4, 0, 0]} name="Employee Payments" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="chart-card">
+                <h3>Invoice Status Breakdown</h3>
+                {analytics.invoiceStatusBreakdown.length === 0 ? (
+                  <p className="empty-state">No invoices yet</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart>
+                      <Pie
+                        data={analytics.invoiceStatusBreakdown}
+                        dataKey="total"
+                        nameKey="status"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        label={(entry) => `${entry.status} (${entry.count})`}
+                      >
+                        {analytics.invoiceStatusBreakdown.map((entry, index) => (
+                          <Cell key={`status-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend />
+                      <Tooltip formatter={(v) => `₹${Number(v).toLocaleString('en-IN')}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            <div className="module-breakdown-grid">
+              {['Invoice', 'Booking', 'EmployeePayment'].map((mod) => {
+                const stats = analytics.byModule[mod];
+                const Icon = MODULE_ICONS[mod];
+                return (
+                  <div key={mod} className="chart-card module-breakdown-card">
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Icon size={18} color={MODULE_COLORS[mod]} /> {MODULE_LABELS[mod]}
+                    </h3>
+                    <div className="module-breakdown-stats">
+                      <div><span>Total</span><strong>₹{stats.total.toLocaleString('en-IN')}</strong></div>
+                      <div><span>This Month</span><strong>₹{stats.thisMonth.toLocaleString('en-IN')}</strong></div>
+                      <div>
+                        <span>vs Last Month</span>
+                        <strong>{stats.momChangePercent === null ? '—' : `${stats.momChangePercent > 0 ? '+' : ''}${stats.momChangePercent}%`}</strong>
+                      </div>
+                      <div><span>Transactions</span><strong>{stats.count}</strong></div>
+                      <div><span>Avg. Amount</span><strong>₹{stats.avgAmount.toLocaleString('en-IN')}</strong></div>
+                    </div>
+                    {stats.byMode.length > 0 && (
+                      <>
+                        <h4 style={{ margin: '12px 0 6px', fontSize: 13, color: 'var(--text-muted, #666)' }}>By Payment Mode</h4>
+                        <ul className="module-breakdown-modes">
+                          {stats.byMode.map((m) => (
+                            <li key={m.mode}>
+                              <span>{m.mode}</span>
+                              <span>₹{m.total.toLocaleString('en-IN')} ({m.count})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )

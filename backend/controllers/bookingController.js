@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const crypto = require('crypto');
 const Booking = require('../models/Booking');
+const Customer = require('../models/Customer');
 const Settings = require('../models/Settings');
 const Payment = require('../models/Payment');
 const APIFeatures = require('../utils/apiFeatures');
@@ -9,30 +10,14 @@ const generateBookingPDF = require('../utils/bookingPdfGenerator');
 const fetchImageBuffer = require('../utils/fetchImageBuffer');
 const { computeBookingStatus } = require('../utils/bookingStatus');
 const resolveCustomer = require('../utils/resolveCustomer');
+const { getNextCouponId } = require('../utils/bookingService');
+const { createInvoiceRecord } = require('../utils/invoiceService');
 
 async function withImageBuffers(settingsDoc) {
   const settings = settingsDoc.toObject ? settingsDoc.toObject() : { ...settingsDoc };
   const logoBuffer = await fetchImageBuffer(settings.logo?.url);
   if (logoBuffer) settings.logoBuffer = logoBuffer;
   return settings;
-}
-
-function pad(n, len) {
-  return String(n).padStart(len, '0');
-}
-
-// Coupon IDs look like CGM-BKG-260804-001 (prefix + YYMMDD + a sequence
-// that resets every day), matching the reference coupon design.
-async function getNextCouponId() {
-  const settings = (await Settings.findOne()) || (await Settings.create({}));
-  const now = new Date();
-  const datePart = `${pad(now.getFullYear() % 100, 2)}${pad(now.getMonth() + 1, 2)}${pad(now.getDate(), 2)}`;
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
-  const countToday = await Booking.countDocuments({ bookingDate: { $gte: startOfDay, $lt: endOfDay } });
-  const seq = pad(countToday + 1, 3);
-  return { couponId: `${settings.bookingPrefix || 'CGM-BKG-'}${datePart}-${seq}`, settings };
 }
 
 // @desc Get all bookings
@@ -258,4 +243,82 @@ exports.getPublicBookingPDF = asyncHandler(async (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename=${booking.couponId}.pdf`);
 
   await generateBookingPDF({ settings, booking }, res);
+});
+
+// @desc Convert a booking coupon into a GST invoice for the same client —
+// e.g. the client initially didn't need GST, now wants a formal bill for
+// this same job. The booking's already-collected payment(s) MOVE to the
+// new invoice (never re-entered/duplicated), and the booking is marked
+// Converted + locked so it can't be edited or paid separately afterward.
+// @route POST /api/bookings/:id/convert
+exports.convertBookingToInvoice = asyncHandler(async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) {
+    res.status(404);
+    throw new Error('Booking not found');
+  }
+  if (booking.convertedToInvoice) {
+    res.status(400);
+    throw new Error('This booking has already been converted to an invoice');
+  }
+
+  const customer = await Customer.findById(booking.customer);
+  if (!customer) {
+    res.status(404);
+    throw new Error('The customer linked to this booking no longer exists');
+  }
+
+  const { items, invoiceDate, dueDate, placeOfSupply, tdsPercent, notes } = req.body;
+
+  // Default to one line item carrying the booking's amount forward —
+  // staff can edit/split it (e.g. into base + GST) before this is called,
+  // since the frontend pre-fills this from the booking and lets them adjust it.
+  const invoiceItems = items && items.length ? items : [
+    { item: booking.serviceType, rate: booking.bookingAmount, qty: 1, taxPercent: 0 },
+  ];
+
+  const invoice = await createInvoiceRecord({
+    customer,
+    items: invoiceItems,
+    invoiceDate,
+    dueDate,
+    placeOfSupply,
+    tdsPercent,
+    notes: notes || booking.notes,
+    sourceBooking: booking._id,
+    createdBy: req.user._id,
+  });
+
+  // Move every payment already recorded against the booking onto the new
+  // invoice — same money, not re-entered, not duplicated.
+  await Payment.updateMany(
+    { module: 'Booking', booking: booking._id },
+    { $set: { module: 'Invoice', invoice: invoice._id, reference: invoice.invoiceNumber }, $unset: { booking: '' } }
+  );
+
+  const paidAgg = await Payment.aggregate([
+    { $match: { module: 'Invoice', invoice: invoice._id } },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  const transferredPaid = Math.min(invoice.amountPayable, paidAgg[0]?.total || 0);
+  invoice.amountPaid = transferredPaid;
+  invoice.status = transferredPaid >= invoice.amountPayable && invoice.amountPayable > 0
+    ? 'Paid'
+    : transferredPaid > 0 ? 'Partially Paid' : 'Draft';
+  await invoice.save();
+
+  booking.convertedToInvoice = invoice._id;
+  booking.convertedAt = new Date();
+  await booking.save();
+
+  await logActivity({
+    user: req.user,
+    action: 'CREATE',
+    module: 'Invoice',
+    description: `Converted booking ${booking.couponId} to invoice ${invoice.invoiceNumber}`,
+    entityId: invoice._id,
+    req,
+  });
+
+  res.status(201).json({ success: true, data: invoice });
 });

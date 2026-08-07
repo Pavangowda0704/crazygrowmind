@@ -1,8 +1,10 @@
 const asyncHandler = require('express-async-handler');
 const crypto = require('crypto');
 const Invoice = require('../models/Invoice');
+const Booking = require('../models/Booking');
 const Customer = require('../models/Customer');
 const Settings = require('../models/Settings');
+const Payment = require('../models/Payment');
 const APIFeatures = require('../utils/apiFeatures');
 const logActivity = require('../utils/activityLogger');
 const generateInvoicePDF = require('../utils/pdfGenerator');
@@ -10,6 +12,9 @@ const { amountInWords } = require('../utils/numberToWords');
 const sendEmail = require('../utils/sendEmail');
 const fetchImageBuffer = require('../utils/fetchImageBuffer');
 const resolveCustomer = require('../utils/resolveCustomer');
+const { computeInvoiceTotals, getNextInvoiceNumber, createInvoiceRecord } = require('../utils/invoiceService');
+const { getNextCouponId } = require('../utils/bookingService');
+const { computeBookingStatus } = require('../utils/bookingStatus');
 
 // Downloads the company logo and signature (if uploaded) into Buffers so
 // PDFKit can embed them. Cached per-call — cheap enough not to bother with
@@ -26,33 +31,6 @@ async function withImageBuffers(settingsDoc) {
 }
 const PDFDocument = require('pdfkit');
 
-// Helper: builds line item calculations + totals
-function computeTotals(items, tdsPercent = 0) {
-  const computedItems = items.map((it) => {
-    const rate = Number(it.rate) || 0;
-    const qty = Number(it.qty) || 1;
-    const taxableValue = rate * qty;
-    const taxPercent = Number(it.taxPercent) || 0;
-    const taxAmount = +(taxableValue * (taxPercent / 100)).toFixed(2);
-    const amount = +(taxableValue + taxAmount).toFixed(2);
-    return { item: it.item, rate, qty, taxableValue, taxPercent, taxAmount, amount };
-  });
-
-  const taxableAmount = +computedItems.reduce((s, i) => s + i.taxableValue, 0).toFixed(2);
-  const totalTaxAmount = +computedItems.reduce((s, i) => s + i.taxAmount, 0).toFixed(2);
-  const total = +(taxableAmount + totalTaxAmount).toFixed(2);
-  const tdsAmount = +(taxableAmount * (Number(tdsPercent) / 100)).toFixed(2);
-  const amountPayable = +(total - tdsAmount).toFixed(2);
-
-  return { computedItems, taxableAmount, totalTaxAmount, total, tdsAmount, amountPayable };
-}
-
-async function getNextInvoiceNumber() {
-  const settings = (await Settings.findOne()) || (await Settings.create({}));
-  const count = await Invoice.countDocuments();
-  const number = (settings.invoiceStartNumber || 1) + count;
-  return { invoiceNumber: `${settings.invoicePrefix || 'INV-'}${number}`, settings };
-}
 
 // @desc Get all invoices
 // @route GET /api/invoices
@@ -96,37 +74,8 @@ exports.createInvoice = asyncHandler(async (req, res) => {
 
   const customer = await resolveCustomer(customerInput, req, res, 'an invoice');
 
-  const { invoiceNumber, settings } = await getNextInvoiceNumber();
-  const effectiveTds = tdsPercent !== undefined ? tdsPercent : settings.defaultTdsPercent;
-
-  const { computedItems, taxableAmount, totalTaxAmount, total, tdsAmount, amountPayable } = computeTotals(
-    items,
-    effectiveTds
-  );
-
-  const invoice = await Invoice.create({
-    invoiceNumber,
-    invoiceDate: invoiceDate || Date.now(),
-    dueDate,
-    customer: customer._id,
-    customerSnapshot: {
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      gstin: customer.gstin,
-      billingAddress: customer.billingAddress,
-    },
-    placeOfSupply: placeOfSupply || customer.placeOfSupply || '',
-    items: computedItems,
-    taxableAmount,
-    totalTaxAmount,
-    total,
-    tdsPercent: effectiveTds,
-    tdsAmount,
-    amountPaid: 0,
-    amountPayable,
-    amountInWords: amountInWords(total),
-    notes,
+  const invoice = await createInvoiceRecord({
+    customer, items, invoiceDate, dueDate, placeOfSupply, tdsPercent, notes,
     createdBy: req.user._id,
   });
 
@@ -155,7 +104,7 @@ exports.updateInvoice = asyncHandler(async (req, res) => {
 
   if (items) {
     const effectiveTds = tdsPercent !== undefined ? tdsPercent : invoice.tdsPercent;
-    const { computedItems, taxableAmount, totalTaxAmount, total, tdsAmount, amountPayable } = computeTotals(
+    const { computedItems, taxableAmount, totalTaxAmount, total, tdsAmount, amountPayable } = computeInvoiceTotals(
       items,
       effectiveTds
     );
@@ -316,4 +265,89 @@ exports.getPublicInvoicePDF = asyncHandler(async (req, res) => {
   res.setHeader('Content-Disposition', `inline; filename=${invoice.invoiceNumber}.pdf`);
 
   generateInvoicePDF({ settings, invoice }, res);
+});
+
+// @desc Convert a DRAFT invoice back into a booking coupon — e.g. staff
+// created a GST invoice by mistake and the client actually just wants a
+// simple coupon. Only allowed while the invoice is still Draft (never
+// sent, no real payment history to worry about) — an invoice that's
+// already been Sent/Paid should be cancelled with a credit note instead,
+// not silently un-issued.
+// @route POST /api/invoices/:id/convert-to-booking
+exports.convertInvoiceToBooking = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findById(req.params.id).populate('customer');
+  if (!invoice) {
+    res.status(404);
+    throw new Error('Invoice not found');
+  }
+  if (invoice.status !== 'Draft') {
+    res.status(400);
+    throw new Error('Only a Draft invoice can be converted back to a booking coupon. An invoice that has been sent or paid should be cancelled with a credit note instead.');
+  }
+  if (invoice.sourceBooking) {
+    res.status(400);
+    throw new Error('This invoice was itself created from a booking — it cannot be converted back');
+  }
+
+  const { serviceType, shootDate, shootLocation, paymentMode, transactionRef, authorizedBy, notes } = req.body;
+  if (!shootDate) {
+    res.status(400);
+    throw new Error('Shoot date is required');
+  }
+
+  const { couponId } = await getNextCouponId();
+
+  const booking = await Booking.create({
+    couponId,
+    bookingDate: Date.now(),
+    clientName: invoice.customerSnapshot?.name,
+    mobile: invoice.customerSnapshot?.phone,
+    email: invoice.customerSnapshot?.email,
+    serviceType: serviceType || invoice.items[0]?.item || 'Service',
+    shootDate,
+    shootLocation,
+    bookingAmount: invoice.amountPayable,
+    amountPaid: 0,
+    balanceAmount: invoice.amountPayable,
+    paymentStatus: 'Unpaid',
+    paymentMode, transactionRef, authorizedBy,
+    notes: notes || invoice.notes,
+    customer: invoice.customer._id,
+    sourceInvoice: invoice._id,
+    createdBy: req.user._id,
+  });
+
+  // Move any payment already recorded against the invoice (rare for a
+  // Draft, but possible) onto the new booking — same money, not duplicated.
+  await Payment.updateMany(
+    { module: 'Invoice', invoice: invoice._id },
+    { $set: { module: 'Booking', booking: booking._id, reference: booking.couponId }, $unset: { invoice: '' } }
+  );
+
+  const paidAgg = await Payment.aggregate([
+    { $match: { module: 'Booking', booking: booking._id } },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  const transferredPaid = Math.min(booking.bookingAmount, paidAgg[0]?.total || 0);
+  const { balance, status } = computeBookingStatus(booking.bookingAmount, transferredPaid);
+  booking.amountPaid = transferredPaid;
+  booking.balanceAmount = balance;
+  booking.paymentStatus = status;
+  await booking.save();
+
+  invoice.status = 'Cancelled';
+  invoice.convertedToBooking = booking._id;
+  invoice.convertedAt = new Date();
+  await invoice.save();
+
+  await logActivity({
+    user: req.user,
+    action: 'CREATE',
+    module: 'Booking',
+    description: `Converted invoice ${invoice.invoiceNumber} to booking ${booking.couponId}`,
+    entityId: booking._id,
+    req,
+  });
+
+  res.status(201).json({ success: true, data: booking });
 });

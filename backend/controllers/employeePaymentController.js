@@ -32,15 +32,28 @@ function computeNet(items) {
     description: it.description,
     amount: +(Number(it.amount) || 0).toFixed(2),
   }));
-  const netAmount = +computedItems.reduce((s, i) => s + i.amount, 0).toFixed(2);
+  // Deductions can exceed earnings on paper, but the actual payout can
+  // never be negative — clamp the total, not the individual lines, so the
+  // payslip still shows the real deduction amounts for the record.
+  const rawNet = computedItems.reduce((s, i) => s + i.amount, 0);
+  const netAmount = +Math.max(0, rawNet).toFixed(2);
   return { computedItems, netAmount };
 }
 
-// Keeps a linked Payment record (direction: 'out') in sync with the payslip,
-// so salary payouts show up on the unified Payments page/reports as an
-// outgoing activity — same ledger as invoices/bookings, opposite direction.
+// Keeps a linked Payment record (direction: 'out') in sync with the payslip
+// — but ONLY once it's actually marked Paid. A "Pending" payslip is a
+// planned/draft payout, not money that has left the business yet, so it
+// must not show up in the Payments ledger, dashboard "Paid Out" totals, or
+// reports until status flips to Paid. If a payslip reverts from Paid back
+// to Pending, its linked Payment record is removed again.
 async function syncEmployeePaymentRecord(payment, userId) {
   const existing = await Payment.findOne({ module: 'EmployeePayment', employeePayment: payment._id });
+
+  if (payment.status !== 'Paid' || payment.netAmount <= 0) {
+    if (existing) await existing.deleteOne();
+    return;
+  }
+
   const data = {
     module: 'EmployeePayment',
     direction: 'out',

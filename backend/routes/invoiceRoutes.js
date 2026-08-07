@@ -10,6 +10,7 @@ const {
   getInvoicePDF,
   emailInvoice,
   getInvoiceShareLink,
+  convertInvoiceToBooking,
 } = require('../controllers/invoiceController');
 const { protect, authorize } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
@@ -38,5 +39,6 @@ router
 router.get('/:id/pdf', getInvoicePDF); // also used for Print (opens PDF, browser print dialog)
 router.post('/:id/email', emailInvoice);
 router.post('/:id/share', getInvoiceShareLink); // returns a public, no-login share link
+router.post('/:id/convert-to-booking', convertInvoiceToBooking); // only allowed while status is Draft
 
 module.exports = router;

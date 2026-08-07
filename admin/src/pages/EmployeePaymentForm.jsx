@@ -64,7 +64,8 @@ const EmployeePaymentForm = () => {
   const addItem = () => setItems([...items, { description: '', amount: 0 }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
 
-  const netAmount = +items.reduce((s, i) => s + (Number(i.amount) || 0), 0).toFixed(2);
+  const rawNet = +items.reduce((s, i) => s + (Number(i.amount) || 0), 0).toFixed(2);
+  const netAmount = Math.max(0, rawNet);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,10 +106,11 @@ const EmployeePaymentForm = () => {
         <div className="form-grid">
           <div className="form-field">
             <label>Employee *</label>
-            <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required>
+            <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} required disabled={isEdit}>
               <option value="">Select employee</option>
               {employees.map((emp) => <option key={emp._id} value={emp._id}>{emp.name}</option>)}
             </select>
+            {isEdit && <p className="form-hint">Employee can't be changed after a payslip is created — delete and recreate it instead.</p>}
           </div>
           <div className="form-field">
             <label>Pay Period *</label>
@@ -173,6 +175,11 @@ const EmployeePaymentForm = () => {
         <div className="invoice-totals">
           <div className="total-row"><span>Net Amount Payable</span><strong>₹{netAmount.toLocaleString('en-IN')}</strong></div>
         </div>
+        {rawNet < 0 && (
+          <p className="form-hint" style={{ color: 'var(--danger)' }}>
+            Deductions exceed earnings — net amount payable is floored at ₹0, it won't go negative.
+          </p>
+        )}
 
         <div className="form-field" style={{ marginTop: 16 }}>
           <label>Notes</label>

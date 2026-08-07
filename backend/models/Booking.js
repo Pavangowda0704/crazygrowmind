@@ -36,6 +36,9 @@ const bookingSchema = new mongoose.Schema(
     // keeping its own disconnected copy of the client's details.
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
     shareToken: { type: String, unique: true, sparse: true },
+    sourceInvoice: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice' }, // set if created via reverse-converting a Draft invoice
+    convertedToInvoice: { type: mongoose.Schema.Types.ObjectId, ref: 'Invoice' }, // set if converted to a GST invoice
+    convertedAt: Date,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

@@ -6,83 +6,139 @@ const APIFeatures = require('../utils/apiFeatures');
 const logActivity = require('../utils/activityLogger');
 const { computeBookingStatus } = require('../utils/bookingStatus');
 
-// @desc Get payment analytics (totals, mode breakdown, monthly trend)
+// @desc Get payment analytics (totals, mode breakdown, monthly trend) —
+// overall AND broken down separately by Invoice / Booking / Employee Payment
 // @route GET /api/payments/analytics
 exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  const [
-    totalsAgg,
-    thisMonthAgg,
-    lastMonthAgg,
-    modeBreakdown,
-    monthlyTrendRaw,
-    pendingInvoices,
-    transactionCount,
-    paidOutAgg,
-  ] = await Promise.all([
-    Payment.aggregate([{ $match: { direction: 'in' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
-    Payment.aggregate([
-      { $match: { direction: 'in', paidOn: { $gte: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: '$amount' } } },
-    ]),
-    Payment.aggregate([
-      { $match: { direction: 'in', paidOn: { $gte: startOfLastMonth, $lt: startOfMonth } } },
-      { $group: { _id: null, total: { $sum: '$amount' } } },
-    ]),
-    Payment.aggregate([
-      { $match: { direction: 'in' } },
-      { $group: { _id: '$mode', total: { $sum: '$amount' }, count: { $sum: 1 } } },
-      { $sort: { total: -1 } },
-    ]),
-    Payment.aggregate([
-      { $match: { direction: 'in', paidOn: { $gte: sixMonthsAgo } } },
+  // One $facet aggregation per module (Invoice/Booking = money in, EmployeePayment
+  // = money out) so every part of the breakdown — total, this month, last month,
+  // payment-mode split, and a 6-month trend — comes back in a single query per module.
+  async function moduleStats(moduleName) {
+    const [result] = await Payment.aggregate([
+      { $match: { module: moduleName } },
       {
-        $group: {
-          _id: { year: { $year: '$paidOn' }, month: { $month: '$paidOn' } },
-          total: { $sum: '$amount' },
+        $facet: {
+          total: [{ $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }],
+          thisMonth: [
+            { $match: { paidOn: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+          ],
+          lastMonth: [
+            { $match: { paidOn: { $gte: startOfLastMonth, $lt: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+          ],
+          byMode: [
+            { $group: { _id: '$mode', total: { $sum: '$amount' }, count: { $sum: 1 } } },
+            { $sort: { total: -1 } },
+          ],
+          monthly: [
+            { $match: { paidOn: { $gte: sixMonthsAgo } } },
+            {
+              $group: {
+                _id: { year: { $year: '$paidOn' }, month: { $month: '$paidOn' } },
+                total: { $sum: '$amount' },
+              },
+            },
+          ],
         },
       },
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
-    ]),
+    ]);
+
+    const total = result.total[0]?.total || 0;
+    const count = result.total[0]?.count || 0;
+    const thisMonth = result.thisMonth[0]?.total || 0;
+    const lastMonth = result.lastMonth[0]?.total || 0;
+    const momChangePercent = lastMonth > 0 ? +(((thisMonth - lastMonth) / lastMonth) * 100).toFixed(1) : null;
+
+    return {
+      total: +total.toFixed(2),
+      count,
+      thisMonth: +thisMonth.toFixed(2),
+      lastMonth: +lastMonth.toFixed(2),
+      momChangePercent,
+      avgAmount: count > 0 ? +(total / count).toFixed(2) : 0,
+      byMode: result.byMode.map((m) => ({ mode: m._id, total: +m.total.toFixed(2), count: m.count })),
+      monthlyRaw: result.monthly, // consumed below to build the 6-month series, not returned as-is
+    };
+  }
+
+  const [invoiceStats, bookingStats, employeePaymentStats, pendingInvoices, statusBreakdownAgg] = await Promise.all([
+    moduleStats('Invoice'),
+    moduleStats('Booking'),
+    moduleStats('EmployeePayment'),
     Invoice.find({ status: { $in: ['Draft', 'Sent', 'Partially Paid', 'Overdue'] } }),
-    Payment.countDocuments({ direction: 'in' }),
-    Payment.aggregate([{ $match: { direction: 'out' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+    Invoice.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$amountPayable' } } }]),
   ]);
 
-  const totalCollected = totalsAgg[0]?.total || 0;
-  const thisMonthCollected = thisMonthAgg[0]?.total || 0;
-  const lastMonthCollected = lastMonthAgg[0]?.total || 0;
+  // Build a 6-month series per module so the frontend can render a stacked
+  // chart (Invoice vs Booking vs Employee Payment) alongside the combined one.
+  function seriesFor(stats) {
+    const series = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const match = stats.monthlyRaw.find((m) => m._id.year === d.getFullYear() && m._id.month === d.getMonth() + 1);
+      series.push(+((match?.total) || 0).toFixed(2));
+    }
+    return series;
+  }
+  const monthLabels = [];
+  for (let i = 5; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    monthLabels.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+  }
+  const invoiceSeries = seriesFor(invoiceStats);
+  const bookingSeries = seriesFor(bookingStats);
+  const employeePaymentSeries = seriesFor(employeePaymentStats);
+
+  const monthlyTrendByModule = monthLabels.map((month, i) => ({
+    month,
+    Invoice: invoiceSeries[i],
+    Booking: bookingSeries[i],
+    EmployeePayment: employeePaymentSeries[i],
+  }));
+  // Combined "money in" trend (Invoice + Booking), same shape the dashboard already uses
+  const monthlyTrend = monthLabels.map((month, i) => ({
+    month,
+    total: +(invoiceSeries[i] + bookingSeries[i]).toFixed(2),
+  }));
+
+  const totalCollected = +(invoiceStats.total + bookingStats.total).toFixed(2);
+  const thisMonthCollected = +(invoiceStats.thisMonth + bookingStats.thisMonth).toFixed(2);
+  const lastMonthCollected = +(invoiceStats.lastMonth + bookingStats.lastMonth).toFixed(2);
   const momChangePercent = lastMonthCollected > 0
     ? +(((thisMonthCollected - lastMonthCollected) / lastMonthCollected) * 100).toFixed(1)
     : null;
+  const transactionCount = invoiceStats.count + bookingStats.count;
+  const totalPaidOut = employeePaymentStats.total;
 
   const totalPending = +pendingInvoices
     .reduce((sum, inv) => sum + Math.max(0, inv.amountPayable - inv.amountPaid), 0)
     .toFixed(2);
-
   const overdueCount = pendingInvoices.filter((inv) => inv.status === 'Overdue').length;
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  // Ensure all 6 months appear even if a month had zero collections
-  const monthlyTrend = [];
-  for (let i = 5; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const match = monthlyTrendRaw.find(
-      (m) => m._id.year === d.getFullYear() && m._id.month === d.getMonth() + 1
-    );
-    monthlyTrend.push({
-      month: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
-      total: match ? +match.total.toFixed(2) : 0,
-    });
-  }
+  // Combined mode breakdown across Invoice + Booking (money in only — matches
+  // what "modeBreakdown" meant before this endpoint was split by module)
+  const combinedModeMap = new Map();
+  [...invoiceStats.byMode, ...bookingStats.byMode].forEach(({ mode, total, count }) => {
+    const existing = combinedModeMap.get(mode) || { mode, total: 0, count: 0 };
+    existing.total = +(existing.total + total).toFixed(2);
+    existing.count += count;
+    combinedModeMap.set(mode, existing);
+  });
+  const modeBreakdown = [...combinedModeMap.values()].sort((a, b) => b.total - a.total);
+
+  const strip = ({ monthlyRaw, ...rest }) => rest; // don't leak the raw mongo grouping shape
 
   res.json({
     success: true,
     data: {
+      // Overall — money in (Invoice + Booking) vs money out (Employee Payments)
       totalCollected,
       thisMonthCollected,
       lastMonthCollected,
@@ -90,10 +146,24 @@ exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
       totalPending,
       overdueCount,
       transactionCount,
-      totalPaidOut: paidOutAgg[0]?.total || 0,
+      totalPaidOut,
+      netCashFlow: +(totalCollected - totalPaidOut).toFixed(2),
       avgPaymentAmount: transactionCount > 0 ? +(totalCollected / transactionCount).toFixed(2) : 0,
-      modeBreakdown: modeBreakdown.map((m) => ({ mode: m._id, total: +m.total.toFixed(2), count: m.count })),
+      modeBreakdown,
       monthlyTrend,
+
+      // Each separate part, broken down identically
+      byModule: {
+        Invoice: strip(invoiceStats),
+        Booking: strip(bookingStats),
+        EmployeePayment: strip(employeePaymentStats),
+      },
+      monthlyTrendByModule,
+      invoiceStatusBreakdown: statusBreakdownAgg.map((s) => ({
+        status: s._id,
+        count: s.count,
+        total: +s.total.toFixed(2),
+      })),
     },
   });
 });

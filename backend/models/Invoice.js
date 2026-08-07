@@ -45,6 +45,9 @@ const invoiceSchema = new mongoose.Schema(
     pdf: { url: String, public_id: String },
     emailedAt: Date,
     shareToken: { type: String, unique: true, sparse: true },
+    sourceBooking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }, // set if created via "Convert to GST Invoice"
+    convertedToBooking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' }, // set if reverse-converted (Draft only)
+    convertedAt: Date,
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

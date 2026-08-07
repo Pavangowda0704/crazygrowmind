@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
@@ -27,12 +27,21 @@ const InvoiceView = () => {
   const [paymentRef, setPaymentRef] = useState('');
   const [shareStatus, setShareStatus] = useState('');
   const [sharing, setSharing] = useState(false);
+
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertServiceType, setConvertServiceType] = useState('');
+  const [convertShootDate, setConvertShootDate] = useState('');
+  const [convertShootLocation, setConvertShootLocation] = useState('');
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState('');
+
   const iframeRef = useRef(null);
 
   const loadInvoice = async () => {
     const { data } = await api.get(`/invoices/${id}`);
     setInvoice(data.data);
     setEmailTo(data.data.customerSnapshot?.email || '');
+    setConvertServiceType(data.data.items?.[0]?.item || '');
   };
 
   const loadPdf = async () => {
@@ -116,6 +125,25 @@ const InvoiceView = () => {
   if (loading || !invoice) return <Loader fullScreen />;
 
   const pending = +(invoice.amountPayable - invoice.amountPaid).toFixed(2);
+  const canConvertToBooking = invoice.status === 'Draft' && !invoice.sourceBooking;
+
+  const handleConvertToBooking = async (e) => {
+    e.preventDefault();
+    setConvertError('');
+    setConverting(true);
+    try {
+      const { data } = await api.post(`/invoices/${id}/convert-to-booking`, {
+        serviceType: convertServiceType,
+        shootDate: convertShootDate,
+        shootLocation: convertShootLocation,
+      });
+      navigate(`/bookings/${data.data._id}/view`);
+    } catch (err) {
+      setConvertError(err.response?.data?.message || 'Failed to convert this invoice');
+    } finally {
+      setConverting(false);
+    }
+  };
 
   return (
     <div>
@@ -133,10 +161,24 @@ const InvoiceView = () => {
             <Button variant="secondary" onClick={handleShare} disabled={sharing}>{sharing ? 'Sharing...' : 'Share'}</Button>
             <Button variant="secondary" onClick={() => setShowEmailModal(true)}>Email Invoice</Button>
             {pending > 0 && <Button onClick={() => { setPaymentAmount(pending); setShowPaymentModal(true); }}>Record Payment</Button>}
+            {canConvertToBooking && (
+              <Button variant="secondary" onClick={() => setShowConvertModal(true)}>Convert to Booking Coupon</Button>
+            )}
           </div>
         }
       />
       {shareStatus && <p className="form-hint" style={{ margin: '-6px 0 12px' }}>{shareStatus}</p>}
+
+      {invoice.sourceBooking && (
+        <div className="form-error" style={{ background: 'var(--info-bg, #e8f0fe)', color: 'var(--info, #1a56db)', marginBottom: 16 }}>
+          This invoice was created by converting a booking coupon.
+        </div>
+      )}
+      {invoice.convertedToBooking && (
+        <div className="form-error" style={{ background: 'var(--success-bg, #e6f4ea)', color: 'var(--success, #1b7a3d)', marginBottom: 16 }}>
+          This invoice was converted to a booking coupon — <Link to={`/bookings/${invoice.convertedToBooking}/view`}>view booking</Link>.
+        </div>
+      )}
 
       <div className="invoice-view-grid">
         <div className="pdf-frame-wrap">
@@ -193,6 +235,35 @@ const InvoiceView = () => {
             <div className="form-actions">
               <Button variant="secondary" onClick={() => setShowPaymentModal(false)}>Cancel</Button>
               <Button type="submit">Save Payment</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showConvertModal && (
+        <Modal title="Convert to Booking Coupon" onClose={() => setShowConvertModal(false)} width={460}>
+          <form onSubmit={handleConvertToBooking}>
+            <p className="form-hint" style={{ marginTop: -4, marginBottom: 12 }}>
+              Cancels this draft invoice and creates a simple booking coupon for {invoice.customerSnapshot?.name} instead
+              (amount ₹{invoice.amountPayable.toLocaleString('en-IN')}). Any payment already recorded moves to the
+              booking automatically.
+            </p>
+            {convertError && <div className="form-error" style={{ marginBottom: 12 }}>{convertError}</div>}
+            <div className="form-field">
+              <label>Service / Shoot Type</label>
+              <input value={convertServiceType} onChange={(e) => setConvertServiceType(e.target.value)} required />
+            </div>
+            <div className="form-field" style={{ marginTop: 12 }}>
+              <label>Shoot Date *</label>
+              <input type="date" value={convertShootDate} onChange={(e) => setConvertShootDate(e.target.value)} required />
+            </div>
+            <div className="form-field" style={{ marginTop: 12 }}>
+              <label>Shoot Location</label>
+              <input value={convertShootLocation} onChange={(e) => setConvertShootLocation(e.target.value)} />
+            </div>
+            <div className="form-actions">
+              <Button variant="secondary" onClick={() => setShowConvertModal(false)}>Cancel</Button>
+              <Button type="submit" disabled={converting}>{converting ? 'Converting...' : 'Create Booking Coupon'}</Button>
             </div>
           </form>
         </Modal>
