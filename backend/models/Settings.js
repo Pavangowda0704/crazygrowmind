@@ -16,6 +16,10 @@ const settingsSchema = new mongoose.Schema(
     invoicePrefix: { type: String, default: 'INV-' },
     invoiceStartNumber: { type: Number, default: 1 },
     defaultTdsPercent: { type: Number, default: 2 },
+    websiteUrl: { type: String, default: 'https://crazygrowmindstudio.com' },
+    bookingPrefix: { type: String, default: 'CGM-BKG-' },
+    payslipPrefix: { type: String, default: 'CGM-EMP-' },
+    payslipStartNumber: { type: Number, default: 1 },
     bankDetails: {
       bankName: { type: String, default: '' },
       accountHolder: { type: String, default: '' },

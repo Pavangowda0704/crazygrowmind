@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import StatusBadge from '../components/StatusBadge';
 import Loader from '../components/Loader';
 import Modal from '../components/Modal';
+import { sharePdfDocument } from '../utils/share';
 import '../styles/InvoiceView.css';
 import '../styles/Form.css';
 
@@ -15,6 +16,7 @@ const InvoiceView = () => {
   const navigate = useNavigate();
   const [invoice, setInvoice] = useState(null);
   const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [emailing, setEmailing] = useState(false);
   const [emailTo, setEmailTo] = useState('');
@@ -23,6 +25,8 @@ const InvoiceView = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('Bank Transfer');
   const [paymentRef, setPaymentRef] = useState('');
+  const [shareStatus, setShareStatus] = useState('');
+  const [sharing, setSharing] = useState(false);
   const iframeRef = useRef(null);
 
   const loadInvoice = async () => {
@@ -33,6 +37,7 @@ const InvoiceView = () => {
 
   const loadPdf = async () => {
     const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' });
+    setPdfBlob(response.data);
     const url = URL.createObjectURL(response.data);
     setPdfUrl(url);
   };
@@ -87,6 +92,27 @@ const InvoiceView = () => {
     await loadPdf();
   };
 
+  const handleShare = async () => {
+    setSharing(true);
+    setShareStatus('');
+    try {
+      const result = await sharePdfDocument({
+        kind: 'invoice',
+        id,
+        filename: `${invoice.invoiceNumber}.pdf`,
+        pdfBlob,
+        whatsappText: `Invoice ${invoice.invoiceNumber} from ${invoice.customerSnapshot?.name ? '' : ''}CrazyGrowMind Studio`,
+      });
+      if (result.method === 'native') setShareStatus('Shared.');
+      else if (result.method === 'link') setShareStatus(result.copied ? 'Share link copied to clipboard.' : 'Share link opened.');
+    } catch (err) {
+      setShareStatus('Could not share this invoice. Try downloading instead.');
+    } finally {
+      setSharing(false);
+      setTimeout(() => setShareStatus(''), 4000);
+    }
+  };
+
   if (loading || !invoice) return <Loader fullScreen />;
 
   const pending = +(invoice.amountPayable - invoice.amountPaid).toFixed(2);
@@ -104,11 +130,13 @@ const InvoiceView = () => {
             <Button variant="secondary" onClick={() => navigate(`/invoices/${id}/edit`)}>Edit</Button>
             <Button variant="secondary" onClick={handlePrint}>Print</Button>
             <Button variant="secondary" onClick={handleDownload}>Download PDF</Button>
+            <Button variant="secondary" onClick={handleShare} disabled={sharing}>{sharing ? 'Sharing...' : 'Share'}</Button>
             <Button variant="secondary" onClick={() => setShowEmailModal(true)}>Email Invoice</Button>
             {pending > 0 && <Button onClick={() => { setPaymentAmount(pending); setShowPaymentModal(true); }}>Record Payment</Button>}
           </div>
         }
       />
+      {shareStatus && <p className="form-hint" style={{ margin: '-6px 0 12px' }}>{shareStatus}</p>}
 
       <div className="invoice-view-grid">
         <div className="pdf-frame-wrap">

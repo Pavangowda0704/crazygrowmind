@@ -1,5 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Customer = require('../models/Customer');
+const Invoice = require('../models/Invoice');
+const Booking = require('../models/Booking');
 const APIFeatures = require('../utils/apiFeatures');
 const logActivity = require('../utils/activityLogger');
 
@@ -82,4 +84,41 @@ exports.deleteCustomer = asyncHandler(async (req, res) => {
     req,
   });
   res.json({ success: true, message: 'Customer deleted successfully' });
+});
+
+// @desc Everything this customer has purchased — invoices + booking
+// coupons — so staff can see their full history in one place.
+// @route GET /api/customers/:id/purchases
+exports.getCustomerPurchases = asyncHandler(async (req, res) => {
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) {
+    res.status(404);
+    throw new Error('Customer not found');
+  }
+
+  const [invoices, bookings] = await Promise.all([
+    Invoice.find({ customer: customer._id }).sort('-invoiceDate'),
+    Booking.find({ customer: customer._id }).sort('-shootDate'),
+  ]);
+
+  const totalInvoiced = +invoices.reduce((s, inv) => s + inv.amountPayable, 0).toFixed(2);
+  const totalBooked = +bookings.reduce((s, b) => s + b.bookingAmount, 0).toFixed(2);
+  const totalPaid = +(
+    invoices.reduce((s, inv) => s + inv.amountPaid, 0) +
+    bookings.reduce((s, b) => s + b.amountPaid, 0)
+  ).toFixed(2);
+
+  res.json({
+    success: true,
+    data: {
+      customer,
+      invoices,
+      bookings,
+      summary: {
+        totalOrders: invoices.length + bookings.length,
+        totalValue: +(totalInvoiced + totalBooked).toFixed(2),
+        totalPaid,
+      },
+    },
+  });
 });

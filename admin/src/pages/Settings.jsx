@@ -132,6 +132,31 @@ const Settings = () => {
           </div>
         </div>
 
+        <h4 style={{ marginTop: 24 }}>Booking Coupon Settings</h4>
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Booking Coupon Prefix</label>
+            <input value={form.bookingPrefix} onChange={(e) => set('bookingPrefix', e.target.value)} placeholder="e.g. CGM-BKG-" />
+            <p className="form-hint">Coupon IDs look like {form.bookingPrefix}260804-001 (prefix + date + a daily sequence).</p>
+          </div>
+          <div className="form-field">
+            <label>Website URL (used for the QR verify link)</label>
+            <input value={form.websiteUrl} onChange={(e) => set('websiteUrl', e.target.value)} placeholder="https://crazygrowmindstudio.com" />
+          </div>
+        </div>
+
+        <h4 style={{ marginTop: 24 }}>Employee Payslip Settings</h4>
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Payslip Prefix</label>
+            <input value={form.payslipPrefix} onChange={(e) => set('payslipPrefix', e.target.value)} placeholder="e.g. CGM-EMP-" />
+          </div>
+          <div className="form-field">
+            <label>Payslip Start Number</label>
+            <input type="number" value={form.payslipStartNumber} onChange={(e) => set('payslipStartNumber', e.target.value)} />
+          </div>
+        </div>
+
         <h4 style={{ marginTop: 24 }}>Bank Details</h4>
         <div className="form-grid">
           <div className="form-field">

@@ -5,6 +5,7 @@ const colorMap = {
   Negotiation: 'gold', Won: 'green', Lost: 'red',
   Active: 'green', Inactive: 'red',
   Draft: 'gray', Sent: 'blue', 'Partially Paid': 'gold', Paid: 'green', Overdue: 'red', Cancelled: 'red',
+  Unpaid: 'red', 'Fully Paid': 'green', Pending: 'gold',
 };
 
 const StatusBadge = ({ status }) => {

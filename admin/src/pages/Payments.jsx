@@ -23,6 +23,7 @@ const Payments = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modeFilter, setModeFilter] = useState('');
+  const [moduleFilter, setModuleFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -32,6 +33,7 @@ const Payments = () => {
     try {
       const params = { page, limit: 10 };
       if (modeFilter) params.mode = modeFilter;
+      if (moduleFilter) params.module = moduleFilter;
       const { data } = await api.get('/payments', { params });
       setPayments(data.data);
       setPages(data.pages);
@@ -39,7 +41,7 @@ const Payments = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, modeFilter]);
+  }, [page, modeFilter, moduleFilter]);
 
   const fetchPending = useCallback(async () => {
     setLoading(true);
@@ -92,6 +94,7 @@ const Payments = () => {
               <StatCard label="Overdue Invoices" value={analytics.overdueCount} icon={<AlertTriangle size={20} />} />
               <StatCard label="Total Transactions" value={analytics.transactionCount} icon={<Receipt size={20} />} />
               <StatCard label="Avg. Payment" value={`₹${analytics.avgPaymentAmount.toLocaleString('en-IN')}`} icon={<BarChart3 size={20} />} />
+              <StatCard label="Paid Out (Employees)" value={`₹${analytics.totalPaidOut.toLocaleString('en-IN')}`} icon={<TrendingDown size={20} />} />
             </div>
 
             <div className="charts-grid">
@@ -142,6 +145,12 @@ const Payments = () => {
       {tab === 'history' && (
         <>
           <SearchFilterBar search="" onSearchChange={() => {}}>
+            <select value={moduleFilter} onChange={(e) => { setModuleFilter(e.target.value); setPage(1); }}>
+              <option value="">All Activities</option>
+              <option value="Invoice">Invoices</option>
+              <option value="Booking">Bookings</option>
+              <option value="EmployeePayment">Employee Payments</option>
+            </select>
             <select value={modeFilter} onChange={(e) => { setModeFilter(e.target.value); setPage(1); }}>
               <option value="">All Modes</option>
               {['Cash', 'Bank Transfer', 'UPI', 'Cheque', 'Card', 'Other'].map((m) => <option key={m} value={m}>{m}</option>)}
@@ -153,26 +162,30 @@ const Payments = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Invoice #</th>
-                    <th>Customer</th>
+                    <th>Activity</th>
+                    <th>Reference</th>
+                    <th>Party</th>
                     <th>Amount</th>
                     <th>Mode</th>
-                    <th>Reference</th>
+                    <th>Txn Ref</th>
                     <th>Paid On</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.map((p) => (
                     <tr key={p._id}>
-                      <td>{p.invoice?.invoiceNumber}</td>
-                      <td>{p.customer?.name}</td>
-                      <td>₹{Number(p.amount).toLocaleString('en-IN')}</td>
+                      <td>{p.module === 'Booking' ? 'Booking' : p.module === 'EmployeePayment' ? 'Employee Payment' : 'Invoice'}</td>
+                      <td>{p.reference || p.invoice?.invoiceNumber || p.booking?.couponId || p.employeePayment?.payslipNumber}</td>
+                      <td>{p.partyName || p.customer?.name || p.employee?.name}</td>
+                      <td style={{ color: p.direction === 'out' ? 'var(--danger)' : 'var(--success)', fontWeight: 600 }}>
+                        {p.direction === 'out' ? '-' : '+'}₹{Number(p.amount).toLocaleString('en-IN')}
+                      </td>
                       <td>{p.mode}</td>
                       <td>{p.referenceNo || '—'}</td>
                       <td>{new Date(p.paidOn).toLocaleDateString('en-IN')}</td>
                     </tr>
                   ))}
-                  {payments.length === 0 && <tr><td colSpan={6} className="empty-state">No payments recorded</td></tr>}
+                  {payments.length === 0 && <tr><td colSpan={7} className="empty-state">No payments recorded</td></tr>}
                 </tbody>
               </table>
             </div>

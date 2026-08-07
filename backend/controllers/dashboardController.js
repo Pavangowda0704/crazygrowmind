@@ -22,18 +22,20 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
 
   const totalRevenue = +invoices.reduce((s, inv) => s + inv.amountPaid, 0).toFixed(2);
   const totalPending = +invoices.reduce((s, inv) => s + Math.max(0, inv.amountPayable - inv.amountPaid), 0).toFixed(2);
-  const totalPayments = payments.length;
+  const totalPayments = payments.length; // every payment activity: invoices, bookings, employee payouts
+  const incomingPayments = payments.filter((p) => p.direction !== 'out');
 
   // Leads by status (for pie/bar chart)
   const leadStatusAgg = await Lead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
 
-  // Revenue by month (last 6 months) for line/bar chart
+  // Revenue by month (last 6 months) for line/bar chart — money received only,
+  // excludes employee payouts so it doesn't understate revenue.
   const now = new Date();
   const monthlyRevenue = [];
   for (let i = 5; i >= 0; i--) {
     const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const monthPayments = payments.filter((p) => p.paidOn >= start && p.paidOn < end);
+    const monthPayments = incomingPayments.filter((p) => p.paidOn >= start && p.paidOn < end);
     const revenue = +monthPayments.reduce((s, p) => s + p.amount, 0).toFixed(2);
     monthlyRevenue.push({
       month: start.toLocaleString('default', { month: 'short', year: '2-digit' }),

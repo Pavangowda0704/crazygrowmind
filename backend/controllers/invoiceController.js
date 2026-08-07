@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler');
+const crypto = require('crypto');
 const Invoice = require('../models/Invoice');
 const Customer = require('../models/Customer');
 const Settings = require('../models/Settings');
@@ -8,6 +9,7 @@ const generateInvoicePDF = require('../utils/pdfGenerator');
 const { amountInWords } = require('../utils/numberToWords');
 const sendEmail = require('../utils/sendEmail');
 const fetchImageBuffer = require('../utils/fetchImageBuffer');
+const resolveCustomer = require('../utils/resolveCustomer');
 
 // Downloads the company logo and signature (if uploaded) into Buffers so
 // PDFKit can embed them. Cached per-call — cheap enough not to bother with
@@ -90,13 +92,9 @@ exports.getInvoice = asyncHandler(async (req, res) => {
 // @desc Create invoice
 // @route POST /api/invoices
 exports.createInvoice = asyncHandler(async (req, res) => {
-  const { customer: customerId, items, dueDate, invoiceDate, placeOfSupply, tdsPercent, notes } = req.body;
+  const { customer: customerInput, items, dueDate, invoiceDate, placeOfSupply, tdsPercent, notes } = req.body;
 
-  const customer = await Customer.findById(customerId);
-  if (!customer) {
-    res.status(404);
-    throw new Error('Customer not found');
-  }
+  const customer = await resolveCustomer(customerInput, req, res, 'an invoice');
 
   const { invoiceNumber, settings } = await getNextInvoiceNumber();
   const effectiveTds = tdsPercent !== undefined ? tdsPercent : settings.defaultTdsPercent;
@@ -284,4 +282,38 @@ exports.emailInvoice = asyncHandler(async (req, res) => {
   });
 
   res.json({ success: true, message: 'Invoice emailed successfully' });
+});
+
+// @desc Get (or create) a public share link for this invoice — anyone with
+// the link can view/download the PDF, no login required.
+// @route POST /api/invoices/:id/share
+exports.getInvoiceShareLink = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findById(req.params.id);
+  if (!invoice) {
+    res.status(404);
+    throw new Error('Invoice not found');
+  }
+  if (!invoice.shareToken) {
+    invoice.shareToken = crypto.randomBytes(16).toString('hex');
+    await invoice.save();
+  }
+  const base = `${req.protocol}://${req.get('host')}`;
+  res.json({ success: true, url: `${base}/api/public/invoices/${invoice.shareToken}/pdf` });
+});
+
+// @desc Public (no-auth) invoice PDF, via share token
+// @route GET /api/public/invoices/:token/pdf
+exports.getPublicInvoicePDF = asyncHandler(async (req, res) => {
+  const invoice = await Invoice.findOne({ shareToken: req.params.token }).populate('customer');
+  if (!invoice) {
+    res.status(404);
+    throw new Error('Link not found or expired');
+  }
+  const settingsDoc = (await Settings.findOne()) || {};
+  const settings = await withImageBuffers(settingsDoc);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename=${invoice.invoiceNumber}.pdf`);
+
+  generateInvoicePDF({ settings, invoice }, res);
 });

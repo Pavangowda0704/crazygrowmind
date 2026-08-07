@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
@@ -18,6 +19,7 @@ const emptyForm = {
 };
 
 const Customers = () => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -31,6 +33,10 @@ const Customers = () => {
   const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [error, setError] = useState('');
+
+  const [purchasesTarget, setPurchasesTarget] = useState(null);
+  const [purchases, setPurchases] = useState(null);
+  const [purchasesLoading, setPurchasesLoading] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -87,6 +93,18 @@ const Customers = () => {
     fetchCustomers();
   };
 
+  const openPurchases = async (customer) => {
+    setPurchasesTarget(customer);
+    setPurchases(null);
+    setPurchasesLoading(true);
+    try {
+      const { data } = await api.get(`/customers/${customer._id}/purchases`);
+      setPurchases(data.data);
+    } finally {
+      setPurchasesLoading(false);
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -133,6 +151,7 @@ const Customers = () => {
                   <td>{c.placeOfSupply || '—'}</td>
                   <td><StatusBadge status={c.status} /></td>
                   <td className="table-actions">
+                    <button className="icon-btn" title="Purchased services" onClick={() => openPurchases(c)}>🛍️</button>
                     <button className="icon-btn" onClick={() => openEdit(c)}>✏️</button>
                     <button className="icon-btn" onClick={() => setDeleteTarget(c)}>🗑️</button>
                   </td>
@@ -228,6 +247,65 @@ const Customers = () => {
           onConfirm={handleDelete}
           onCancel={() => setDeleteTarget(null)}
         />
+      )}
+
+      {purchasesTarget && (
+        <Modal title={`Purchased Services — ${purchasesTarget.name}`} onClose={() => setPurchasesTarget(null)} width={700}>
+          {purchasesLoading || !purchases ? (
+            <Loader />
+          ) : (
+            <>
+              <div className="invoice-totals" style={{ marginBottom: 16 }}>
+                <div><span>Total Orders</span><strong>{purchases.summary.totalOrders}</strong></div>
+                <div><span>Total Value</span><strong>₹{purchases.summary.totalValue.toLocaleString('en-IN')}</strong></div>
+                <div className="total-row"><span>Total Paid</span><strong>₹{purchases.summary.totalPaid.toLocaleString('en-IN')}</strong></div>
+              </div>
+
+              <h4 style={{ marginBottom: 8 }}>Invoices ({purchases.invoices.length})</h4>
+              {purchases.invoices.length === 0 ? (
+                <p className="form-hint">No invoices yet.</p>
+              ) : (
+                <div className="table-card" style={{ marginBottom: 20 }}>
+                  <table className="data-table">
+                    <thead><tr><th>Invoice #</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {purchases.invoices.map((inv) => (
+                        <tr key={inv._id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/invoices/${inv._id}/view`)}>
+                          <td><strong>{inv.invoiceNumber}</strong></td>
+                          <td>{new Date(inv.invoiceDate).toLocaleDateString('en-IN')}</td>
+                          <td>₹{Number(inv.amountPayable).toLocaleString('en-IN')}</td>
+                          <td><StatusBadge status={inv.status} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <h4 style={{ marginBottom: 8 }}>Booking Coupons ({purchases.bookings.length})</h4>
+              {purchases.bookings.length === 0 ? (
+                <p className="form-hint">No bookings yet.</p>
+              ) : (
+                <div className="table-card">
+                  <table className="data-table">
+                    <thead><tr><th>Coupon ID</th><th>Service</th><th>Shoot Date</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {purchases.bookings.map((b) => (
+                        <tr key={b._id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/bookings/${b._id}/view`)}>
+                          <td><strong>{b.couponId}</strong></td>
+                          <td>{b.serviceType}</td>
+                          <td>{new Date(b.shootDate).toLocaleDateString('en-IN')}</td>
+                          <td>₹{Number(b.bookingAmount).toLocaleString('en-IN')}</td>
+                          <td><StatusBadge status={b.paymentStatus} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </Modal>
       )}
     </div>
   );

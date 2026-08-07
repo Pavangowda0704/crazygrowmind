@@ -23,8 +23,13 @@ router
   .get(getPayments)
   .post(
     [
-      body('invoice').notEmpty().withMessage('Invoice is required'),
       body('amount').isNumeric().withMessage('Amount must be a number'),
+      body().custom((value) => {
+        if (!value.invoice && !value.booking) {
+          throw new Error('Either invoice or booking is required');
+        }
+        return true;
+      }),
     ],
     validate,
     createPayment

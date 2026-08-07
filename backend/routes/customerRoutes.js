@@ -7,6 +7,7 @@ const {
   createCustomer,
   updateCustomer,
   deleteCustomer,
+  getCustomerPurchases,
 } = require('../controllers/customerController');
 const { protect, authorize } = require('../middleware/auth');
 const { validate } = require('../middleware/validate');
@@ -27,5 +28,7 @@ router
   .get(getCustomer)
   .put(updateCustomer)
   .delete(authorize('superadmin', 'admin'), deleteCustomer);
+
+router.get('/:id/purchases', getCustomerPurchases);
 
 module.exports = router;

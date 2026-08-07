@@ -18,6 +18,11 @@ const InvoiceForm = () => {
   const [settings, setSettings] = useState(null);
 
   const [customerId, setCustomerId] = useState('');
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    name: '', phone: '', email: '', gstin: '', company: '',
+    billingAddress: { line1: '', city: '', state: '', pincode: '' },
+  });
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState(new Date().toISOString().slice(0, 10));
   const [placeOfSupply, setPlaceOfSupply] = useState('');
@@ -52,10 +57,20 @@ const InvoiceForm = () => {
   }, [id, isEdit]);
 
   const handleCustomerChange = (custId) => {
+    if (custId === '__new__') {
+      setIsNewCustomer(true);
+      setCustomerId('');
+      return;
+    }
+    setIsNewCustomer(false);
     setCustomerId(custId);
     const cust = customers.find((c) => c._id === custId);
     if (cust) setPlaceOfSupply(cust.placeOfSupply || '');
   };
+
+  const setNewCustomerField = (field, value) => setNewCustomer({ ...newCustomer, [field]: value });
+  const setNewCustomerAddress = (field, value) =>
+    setNewCustomer({ ...newCustomer, billingAddress: { ...newCustomer.billingAddress, [field]: value } });
 
   const updateItem = (idx, field, value) => {
     const updated = [...items];
@@ -97,7 +112,7 @@ const InvoiceForm = () => {
     setSaving(true);
     try {
       const payload = {
-        customer: customerId,
+        customer: isNewCustomer ? newCustomer : customerId,
         invoiceDate,
         dueDate,
         placeOfSupply,
@@ -129,9 +144,10 @@ const InvoiceForm = () => {
         <div className="form-grid">
           <div className="form-field">
             <label>Customer *</label>
-            <select value={customerId} onChange={(e) => handleCustomerChange(e.target.value)} required>
+            <select value={isNewCustomer ? '__new__' : customerId} onChange={(e) => handleCustomerChange(e.target.value)} required={!isNewCustomer}>
               <option value="">Select customer</option>
               {customers.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
+              <option value="__new__">+ Add New Client</option>
             </select>
           </div>
           <div className="form-field">
@@ -151,6 +167,54 @@ const InvoiceForm = () => {
             <input type="number" value={tdsPercent} onChange={(e) => setTdsPercent(e.target.value)} />
           </div>
         </div>
+
+        {isNewCustomer && (
+          <>
+            <h4 style={{ margin: '18px 0 10px' }}>New Client Details</h4>
+            <p className="form-hint" style={{ marginTop: -6, marginBottom: 10 }}>
+              GSTIN is optional — leave it blank for clients who don't need a GST invoice (e.g. friends, informal work).
+              This client is added to Customers automatically when you save.
+            </p>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Name *</label>
+                <input value={newCustomer.name} onChange={(e) => setNewCustomerField('name', e.target.value)} required />
+              </div>
+              <div className="form-field">
+                <label>Phone *</label>
+                <input value={newCustomer.phone} onChange={(e) => setNewCustomerField('phone', e.target.value)} required />
+              </div>
+              <div className="form-field">
+                <label>Email</label>
+                <input type="email" value={newCustomer.email} onChange={(e) => setNewCustomerField('email', e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>GSTIN (optional)</label>
+                <input value={newCustomer.gstin} onChange={(e) => setNewCustomerField('gstin', e.target.value)} placeholder="Leave blank if not applicable" />
+              </div>
+              <div className="form-field">
+                <label>Company</label>
+                <input value={newCustomer.company} onChange={(e) => setNewCustomerField('company', e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>Address</label>
+                <input value={newCustomer.billingAddress.line1} onChange={(e) => setNewCustomerAddress('line1', e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>City</label>
+                <input value={newCustomer.billingAddress.city} onChange={(e) => setNewCustomerAddress('city', e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>State</label>
+                <input value={newCustomer.billingAddress.state} onChange={(e) => setNewCustomerAddress('state', e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>Pincode</label>
+                <input value={newCustomer.billingAddress.pincode} onChange={(e) => setNewCustomerAddress('pincode', e.target.value)} />
+              </div>
+            </div>
+          </>
+        )}
 
         <h4 style={{ margin: '22px 0 10px' }}>Line Items</h4>
         <div className="items-table-wrap">

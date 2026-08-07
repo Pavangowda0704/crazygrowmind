@@ -1,8 +1,10 @@
 const asyncHandler = require('express-async-handler');
 const Payment = require('../models/Payment');
 const Invoice = require('../models/Invoice');
+const Booking = require('../models/Booking');
 const APIFeatures = require('../utils/apiFeatures');
 const logActivity = require('../utils/activityLogger');
+const { computeBookingStatus } = require('../utils/bookingStatus');
 
 // @desc Get payment analytics (totals, mode breakdown, monthly trend)
 // @route GET /api/payments/analytics
@@ -20,22 +22,24 @@ exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
     monthlyTrendRaw,
     pendingInvoices,
     transactionCount,
+    paidOutAgg,
   ] = await Promise.all([
-    Payment.aggregate([{ $group: { _id: null, total: { $sum: '$amount' } } }]),
+    Payment.aggregate([{ $match: { direction: 'in' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     Payment.aggregate([
-      { $match: { paidOn: { $gte: startOfMonth } } },
+      { $match: { direction: 'in', paidOn: { $gte: startOfMonth } } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]),
     Payment.aggregate([
-      { $match: { paidOn: { $gte: startOfLastMonth, $lt: startOfMonth } } },
+      { $match: { direction: 'in', paidOn: { $gte: startOfLastMonth, $lt: startOfMonth } } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]),
     Payment.aggregate([
+      { $match: { direction: 'in' } },
       { $group: { _id: '$mode', total: { $sum: '$amount' }, count: { $sum: 1 } } },
       { $sort: { total: -1 } },
     ]),
     Payment.aggregate([
-      { $match: { paidOn: { $gte: sixMonthsAgo } } },
+      { $match: { direction: 'in', paidOn: { $gte: sixMonthsAgo } } },
       {
         $group: {
           _id: { year: { $year: '$paidOn' }, month: { $month: '$paidOn' } },
@@ -45,7 +49,8 @@ exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]),
     Invoice.find({ status: { $in: ['Draft', 'Sent', 'Partially Paid', 'Overdue'] } }),
-    Payment.countDocuments(),
+    Payment.countDocuments({ direction: 'in' }),
+    Payment.aggregate([{ $match: { direction: 'out' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
   ]);
 
   const totalCollected = totalsAgg[0]?.total || 0;
@@ -85,6 +90,7 @@ exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
       totalPending,
       overdueCount,
       transactionCount,
+      totalPaidOut: paidOutAgg[0]?.total || 0,
       avgPaymentAmount: transactionCount > 0 ? +(totalCollected / transactionCount).toFixed(2) : 0,
       modeBreakdown: modeBreakdown.map((m) => ({ mode: m._id, total: +m.total.toFixed(2), count: m.count })),
       monthlyTrend,
@@ -96,7 +102,12 @@ exports.getPaymentAnalytics = asyncHandler(async (req, res) => {
 // @route GET /api/payments
 exports.getPayments = asyncHandler(async (req, res) => {
   const features = new APIFeatures(
-    Payment.find().populate('invoice', 'invoiceNumber total amountPayable').populate('customer', 'name email'),
+    Payment.find()
+      .populate('invoice', 'invoiceNumber total amountPayable')
+      .populate('customer', 'name email')
+      .populate('employee', 'name designation')
+      .populate('booking', 'couponId')
+      .populate('employeePayment', 'payslipNumber'),
     req.query
   )
     .filter()
@@ -143,20 +154,68 @@ exports.getPendingPayments = asyncHandler(async (req, res) => {
   res.json({ success: true, count: pending.length, data: pending });
 });
 
-// @desc Record a payment against an invoice
+// @desc Record a payment against an invoice OR a booking coupon —
+// pass exactly one of `invoice` / `booking` in the body. Every payment is
+// its own Payment record (never overwritten), same pattern for both, so
+// bookings get proper incremental payment history like invoices do.
 // @route POST /api/payments
 exports.createPayment = asyncHandler(async (req, res) => {
-  const { invoice: invoiceId, amount, mode, referenceNo, paidOn, notes } = req.body;
+  const { invoice: invoiceId, booking: bookingId, amount, mode, referenceNo, paidOn, notes } = req.body;
 
-  const invoice = await Invoice.findById(invoiceId);
+  if (bookingId) {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      res.status(404);
+      throw new Error('Booking not found');
+    }
+
+    const payment = await Payment.create({
+      module: 'Booking',
+      direction: 'in',
+      booking: booking._id,
+      customer: booking.customer || undefined,
+      partyName: booking.clientName,
+      reference: booking.couponId,
+      amount,
+      mode,
+      referenceNo,
+      paidOn,
+      notes,
+      recordedBy: req.user._id,
+    });
+
+    const newPaid = Math.min(booking.bookingAmount, +(booking.amountPaid + Number(amount)).toFixed(2));
+    const { balance, status } = computeBookingStatus(booking.bookingAmount, newPaid);
+    booking.amountPaid = newPaid;
+    booking.balanceAmount = balance;
+    booking.paymentStatus = status;
+    await booking.save();
+
+    await logActivity({
+      user: req.user,
+      action: 'CREATE',
+      module: 'Payment',
+      description: `Recorded payment of ₹${amount} for booking ${booking.couponId}`,
+      entityId: payment._id,
+      req,
+    });
+
+    return res.status(201).json({ success: true, data: payment });
+  }
+
+  const invoice = await Invoice.findById(invoiceId).populate('customer', 'name');
   if (!invoice) {
     res.status(404);
     throw new Error('Invoice not found');
   }
 
   const payment = await Payment.create({
+    module: 'Invoice',
+    direction: 'in',
     invoice: invoice._id,
-    customer: invoice.customer,
+    customer: invoice.customer?._id || invoice.customer,
+    partyName: invoice.customer?.name || invoice.customerSnapshot?.name,
+    reference: invoice.invoiceNumber,
     amount,
     mode,
     referenceNo,
@@ -197,13 +256,40 @@ exports.getPayment = asyncHandler(async (req, res) => {
   res.json({ success: true, data: payment });
 });
 
-// @desc Update payment record
+// @desc Update payment record (works for invoice- or booking-linked payments)
 // @route PUT /api/payments/:id
 exports.updatePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id);
   if (!payment) {
     res.status(404);
     throw new Error('Payment not found');
+  }
+
+  if (payment.module === 'Booking') {
+    const booking = await Booking.findById(payment.booking);
+    if (booking && req.body.amount !== undefined) {
+      const reverted = +(booking.amountPaid - payment.amount).toFixed(2);
+      const newPaid = Math.max(0, Math.min(booking.bookingAmount, +(reverted + Number(req.body.amount)).toFixed(2)));
+      const { balance, status } = computeBookingStatus(booking.bookingAmount, newPaid);
+      booking.amountPaid = newPaid;
+      booking.balanceAmount = balance;
+      booking.paymentStatus = status;
+      await booking.save();
+    }
+
+    Object.assign(payment, req.body);
+    await payment.save();
+
+    await logActivity({
+      user: req.user,
+      action: 'UPDATE',
+      module: 'Payment',
+      description: `Updated payment for booking ${booking ? booking.couponId : ''}`,
+      entityId: payment._id,
+      req,
+    });
+
+    return res.json({ success: true, data: payment });
   }
 
   const invoice = await Invoice.findById(payment.invoice);
@@ -230,13 +316,36 @@ exports.updatePayment = asyncHandler(async (req, res) => {
   res.json({ success: true, data: payment });
 });
 
-// @desc Delete a payment (reverses amount on invoice)
+// @desc Delete a payment (reverses amount on the invoice or booking it belongs to)
 // @route DELETE /api/payments/:id
 exports.deletePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findByIdAndDelete(req.params.id);
   if (!payment) {
     res.status(404);
     throw new Error('Payment not found');
+  }
+
+  if (payment.module === 'Booking') {
+    const booking = await Booking.findById(payment.booking);
+    if (booking) {
+      const newPaid = Math.max(0, +(booking.amountPaid - payment.amount).toFixed(2));
+      const { balance, status } = computeBookingStatus(booking.bookingAmount, newPaid);
+      booking.amountPaid = newPaid;
+      booking.balanceAmount = balance;
+      booking.paymentStatus = status;
+      await booking.save();
+    }
+
+    await logActivity({
+      user: req.user,
+      action: 'DELETE',
+      module: 'Payment',
+      description: `Deleted payment of ₹${payment.amount}`,
+      entityId: payment._id,
+      req,
+    });
+
+    return res.json({ success: true, message: 'Payment deleted and booking balance reversed' });
   }
 
   const invoice = await Invoice.findById(payment.invoice);

@@ -16,6 +16,13 @@ import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Users from './pages/Users';
+import Bookings from './pages/Bookings';
+import BookingForm from './pages/BookingForm';
+import BookingView from './pages/BookingView';
+import Employees from './pages/Employees';
+import EmployeePayments from './pages/EmployeePayments';
+import EmployeePaymentForm from './pages/EmployeePaymentForm';
+import EmployeePaymentView from './pages/EmployeePaymentView';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -45,6 +52,15 @@ function App() {
         <Route path="payments" element={<Payments />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="bookings" element={<Bookings />} />
+        <Route path="bookings/new" element={<BookingForm />} />
+        <Route path="bookings/:id/edit" element={<BookingForm />} />
+        <Route path="bookings/:id/view" element={<BookingView />} />
+        <Route path="employees" element={<Employees />} />
+        <Route path="employee-payments" element={<EmployeePayments />} />
+        <Route path="employee-payments/new" element={<EmployeePaymentForm />} />
+        <Route path="employee-payments/:id/edit" element={<EmployeePaymentForm />} />
+        <Route path="employee-payments/:id/view" element={<EmployeePaymentView />} />
         <Route
           path="users"
           element={

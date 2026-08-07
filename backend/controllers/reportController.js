@@ -16,10 +16,10 @@ function dateRangeFilter(req, field = 'createdAt') {
   return filter;
 }
 
-// @desc Revenue report
+// @desc Revenue report (money received — invoices + booking coupons; excludes employee payouts)
 // @route GET /api/reports/revenue
 exports.revenueReport = asyncHandler(async (req, res) => {
-  const filter = dateRangeFilter(req, 'paidOn');
+  const filter = { ...dateRangeFilter(req, 'paidOn'), direction: 'in' };
   const payments = await Payment.find(filter).populate('customer', 'name').populate('invoice', 'invoiceNumber');
   const total = +payments.reduce((s, p) => s + p.amount, 0).toFixed(2);
   res.json({ success: true, total, count: payments.length, data: payments });
@@ -64,11 +64,18 @@ exports.invoicesReport = asyncHandler(async (req, res) => {
   res.json({ success: true, count: invoices.length, totalValue, byStatus, data: invoices });
 });
 
-// @desc Payments report
+// @desc Payments report — every payment activity (invoices, bookings, employee payouts)
 // @route GET /api/reports/payments
 exports.paymentsReport = asyncHandler(async (req, res) => {
   const filter = dateRangeFilter(req, 'paidOn');
-  const payments = await Payment.find(filter).populate('customer', 'name').populate('invoice', 'invoiceNumber');
+  const payments = await Payment.find(filter)
+    .populate('customer', 'name')
+    .populate('invoice', 'invoiceNumber')
+    .populate('employee', 'name')
+    .populate('booking', 'couponId')
+    .populate('employeePayment', 'payslipNumber');
   const byMode = await Payment.aggregate([{ $match: filter }, { $group: { _id: '$mode', total: { $sum: '$amount' }, count: { $sum: 1 } } }]);
-  res.json({ success: true, count: payments.length, byMode, data: payments });
+  const totalIn = +payments.filter((p) => p.direction === 'in').reduce((s, p) => s + p.amount, 0).toFixed(2);
+  const totalOut = +payments.filter((p) => p.direction === 'out').reduce((s, p) => s + p.amount, 0).toFixed(2);
+  res.json({ success: true, count: payments.length, byMode, totalIn, totalOut, data: payments });
 });

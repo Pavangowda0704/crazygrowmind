@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Target, Users, Wrench, FileText, CreditCard, TrendingUp, Settings, ShieldCheck,
+  Ticket, UserCog, Wallet,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Sidebar.css';
@@ -10,8 +11,11 @@ const links = [
   { to: '/leads', label: 'Leads', icon: Target },
   { to: '/customers', label: 'Customers', icon: Users },
   { to: '/services', label: 'Services', icon: Wrench },
+  { to: '/bookings', label: 'Bookings', icon: Ticket },
   { to: '/invoices', label: 'Invoices', icon: FileText },
   { to: '/payments', label: 'Payments', icon: CreditCard },
+  { to: '/employees', label: 'Employees', icon: UserCog },
+  { to: '/employee-payments', label: 'Employee Payments', icon: Wallet },
   { to: '/reports', label: 'Reports', icon: TrendingUp },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];

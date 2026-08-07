@@ -19,10 +19,18 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const activityLogRoutes = require('./routes/activityLogRoutes');
 const userRoutes = require('./routes/userRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
+const employeePaymentRoutes = require('./routes/employeePaymentRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 connectDB();
 
 const app = express();
+
+// Trust Render/any reverse proxy's X-Forwarded-* headers so req.protocol
+// reports https correctly (used to build public share links).
+app.set('trust proxy', 1);
 
 app.use(
   cors({
@@ -80,6 +88,13 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/employee-payments', employeePaymentRoutes);
+
+// Public, unauthenticated routes — shared PDF links (invoices/bookings).
+// No `protect` middleware; access is gated by an unguessable share token.
+app.use('/api/public', publicRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

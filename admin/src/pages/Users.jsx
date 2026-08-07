@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '../api/axios';
 import PageHeader from '../components/PageHeader';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
+import SearchFilterBar from '../components/SearchFilterBar';
 import StatusBadge from '../components/StatusBadge';
 import Loader from '../components/Loader';
 import '../styles/Table.css';
@@ -13,6 +14,7 @@ const emptyForm = { name: '', email: '', password: '', role: 'staff' };
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
@@ -28,6 +30,14 @@ const Users = () => {
   };
 
   useEffect(() => { fetchUsers(); }, []);
+
+  const filteredUsers = useMemo(() => {
+    if (!search) return users;
+    const q = search.toLowerCase();
+    return users.filter((u) =>
+      u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q)
+    );
+  }, [users, search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,12 +61,14 @@ const Users = () => {
     <div>
       <PageHeader title="Admin Users" subtitle="Manage staff and admin accounts" action={<Button onClick={() => setShowForm(true)}>+ Add User</Button>} />
 
+      <SearchFilterBar search={search} onSearchChange={setSearch} />
+
       {loading ? <Loader /> : (
         <div className="table-card">
           <table className="data-table">
             <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u._id}>
                   <td>{u.name}</td>
                   <td>{u.email}</td>
@@ -67,6 +79,9 @@ const Users = () => {
                   </td>
                 </tr>
               ))}
+              {filteredUsers.length === 0 && (
+                <tr><td colSpan={5} className="empty-state">No users found</td></tr>
+              )}
             </tbody>
           </table>
         </div>

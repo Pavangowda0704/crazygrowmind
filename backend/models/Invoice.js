@@ -44,6 +44,7 @@ const invoiceSchema = new mongoose.Schema(
     notes: { type: String, trim: true },
     pdf: { url: String, public_id: String },
     emailedAt: Date,
+    shareToken: { type: String, unique: true, sparse: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
