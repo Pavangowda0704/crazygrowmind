@@ -52,6 +52,11 @@ const EmployeePaymentView = () => {
     link.click();
   };
 
+  const handleMarkPaid = async () => {
+    await api.put(`/employee-payments/${id}`, { status: 'Paid' });
+    await loadPayment();
+  };
+
   if (loading || !payment) return <Loader fullScreen />;
 
   return (
@@ -67,9 +72,15 @@ const EmployeePaymentView = () => {
             <Button variant="secondary" onClick={() => navigate(`/employee-payments/${id}/edit`)}>Edit</Button>
             <Button variant="secondary" onClick={handlePrint}>Print</Button>
             <Button variant="secondary" onClick={handleDownload}>Download PDF</Button>
+            {payment.status === 'Pending' && <Button onClick={handleMarkPaid}>Mark as Paid</Button>}
           </div>
         }
       />
+      {payment.status === 'Pending' && (
+        <p className="form-hint" style={{ margin: '-6px 0 12px' }}>
+          This payslip is Pending — it won't appear on the Payments or Analytics pages until marked Paid.
+        </p>
+      )}
 
       <div className="invoice-view-grid">
         <div className="pdf-frame-wrap">

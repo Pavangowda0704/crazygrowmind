@@ -3,25 +3,37 @@ const Lead = require('../models/Lead');
 const Customer = require('../models/Customer');
 const Service = require('../models/Service');
 const Invoice = require('../models/Invoice');
+const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
 const ActivityLog = require('../models/ActivityLog');
 
 // @desc Dashboard summary + chart data
 // @route GET /api/dashboard
 exports.getDashboardStats = asyncHandler(async (req, res) => {
-  const [totalLeads, totalCustomers, totalServices, totalInvoices, invoices, payments, recentActivity] =
+  const [totalLeads, totalCustomers, totalServices, totalInvoices, invoices, bookings, payments, recentActivity] =
     await Promise.all([
       Lead.countDocuments(),
       Customer.countDocuments(),
       Service.countDocuments(),
       Invoice.countDocuments(),
       Invoice.find(),
+      Booking.find(),
       Payment.find(),
       ActivityLog.find().populate('user', 'name').sort('-createdAt').limit(10),
     ]);
 
-  const totalRevenue = +invoices.reduce((s, inv) => s + inv.amountPaid, 0).toFixed(2);
-  const totalPending = +invoices.reduce((s, inv) => s + Math.max(0, inv.amountPayable - inv.amountPaid), 0).toFixed(2);
+  // Revenue collected must include BOTH invoices and booking coupons —
+  // this previously only summed Invoice.amountPaid, silently understating
+  // revenue by the full amount of every booking coupon ever paid.
+  const totalRevenue = +(
+    invoices.reduce((s, inv) => s + inv.amountPaid, 0) +
+    bookings.reduce((s, b) => s + b.amountPaid, 0)
+  ).toFixed(2);
+  const totalPending = +(
+    invoices.reduce((s, inv) => s + Math.max(0, inv.amountPayable - inv.amountPaid), 0) +
+    bookings.reduce((s, b) => s + Math.max(0, b.balanceAmount), 0)
+  ).toFixed(2);
+  const totalPaidOut = +payments.filter((p) => p.direction === 'out').reduce((s, p) => s + p.amount, 0).toFixed(2);
   const totalPayments = payments.length; // every payment activity: invoices, bookings, employee payouts
   const incomingPayments = payments.filter((p) => p.direction !== 'out');
 
@@ -57,6 +69,7 @@ exports.getDashboardStats = asyncHandler(async (req, res) => {
         revenue: totalRevenue,
         pendingAmount: totalPending,
         payments: totalPayments,
+        paidOut: totalPaidOut,
       },
       charts: {
         leadsByStatus: leadStatusAgg.map((x) => ({ status: x._id, count: x.count })),

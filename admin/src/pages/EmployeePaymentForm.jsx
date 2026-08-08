@@ -136,6 +136,14 @@ const EmployeePaymentForm = () => {
               <option value="Paid">Paid</option>
               <option value="Pending">Pending</option>
             </select>
+            {status === 'Pending' ? (
+              <p className="form-hint">
+                Pending payslips don't count as money paid out yet — this won't appear on the Payments or
+                Analytics pages until you mark it Paid.
+              </p>
+            ) : (
+              <p className="form-hint">Marked Paid — this will show up on the Payments and Analytics pages immediately.</p>
+            )}
           </div>
         </div>
 
